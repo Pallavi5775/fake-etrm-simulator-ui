@@ -25,7 +25,7 @@ export default function ConfigDashboard() {
       </Typography>
 
       <Grid container spacing={2}>
-        {CONFIG_SECTIONS.map((c) => (
+        {CONFIG_SECTIONS?.map((c) => (
           <Grid item xs={12} md={4} key={c.title}>
             <Paper
               sx={{

@@ -5,7 +5,7 @@ import {
   Stack, FormControl, InputLabel, Select, MenuItem,
   FormControlLabel, Alert, CircularProgress
 } from "@mui/material";
-import { Add as AddIcon } from "@mui/icons-material";
+import { Add as AddIcon, UploadFile as UploadFileIcon } from "@mui/icons-material";
 
 const BASE_URL = "http://localhost:8080/api/templates";
 const INSTRUMENTS_URL = "http://localhost:8080/api/instruments";
@@ -21,8 +21,15 @@ export default function DealTemplateList() {
     instrumentId: "",
     defaultQuantity: "",
     defaultPrice: "",
-    autoApprovalAllowed: false
+    autoApprovalAllowed: false,
+    mtmApprovalThreshold: ""
   });
+  
+  // CSV Upload
+  const [uploadDialog, setUploadDialog] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [uploadResult, setUploadResult] = useState(null);
 
   useEffect(() => {
     fetchTemplates();
@@ -33,9 +40,10 @@ export default function DealTemplateList() {
     try {
       const res = await fetch(BASE_URL);
       const data = await res.json();
-      setTemplates(data);
+      setTemplates(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to load templates:", error);
+      setTemplates([]);
     }
   };
 
@@ -44,10 +52,11 @@ export default function DealTemplateList() {
       const response = await fetch(INSTRUMENTS_URL);
       if (response.ok) {
         const data = await response.json();
-        setInstruments(data);
+        setInstruments(Array.isArray(data) ? data : []);
       }
     } catch (error) {
       console.error("Failed to load instruments:", error);
+      setInstruments([]);
     }
   };
 
@@ -71,7 +80,7 @@ export default function DealTemplateList() {
 
       if (res.ok) {
         const updated = await res.json();
-        setTemplates(prev => prev.map(t => t.id === templateId ? updated : t));
+        setTemplates(prev => prev?.map(t => t.id === templateId ? updated : t));
       }
     } catch (error) {
       console.error("Error toggling auto-approval:", error);
@@ -84,7 +93,8 @@ export default function DealTemplateList() {
       instrumentId: "",
       defaultQuantity: "",
       defaultPrice: "",
-      autoApprovalAllowed: false
+      autoApprovalAllowed: false,
+      mtmApprovalThreshold: ""
     });
     setError(null);
     setOpenDialog(true);
@@ -93,6 +103,54 @@ export default function DealTemplateList() {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setError(null);
+  };
+
+  const handleCSVUpload = async () => {
+    if (!selectedFile) {
+      setError("Please select a CSV file");
+      return;
+    }
+
+    setUploadLoading(true);
+    setUploadResult(null);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+
+      const response = await fetch(`${BASE_URL}/upload-csv`, {
+        method: "POST",
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to upload CSV");
+      }
+
+      const result = await response.json();
+      setUploadResult(result);
+      await fetchTemplates();
+      setSelectedFile(null);
+    } catch (err) {
+      console.error("CSV upload failed:", err);
+      setError(err.message);
+    } finally {
+      setUploadLoading(false);
+    }
+  };
+
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (file && file.type === "text/csv") {
+      setSelectedFile(file);
+      setUploadResult(null);
+      setError(null);
+    } else {
+      setError("Please select a valid CSV file");
+      setSelectedFile(null);
+    }
   };
 
   const handleCreateTemplate = async () => {
@@ -113,7 +171,8 @@ export default function DealTemplateList() {
         instrumentId: parseInt(formData.instrumentId),
         defaultQuantity: formData.defaultQuantity ? parseFloat(formData.defaultQuantity) : null,
         defaultPrice: parseFloat(formData.defaultPrice),
-        autoApprovalAllowed: formData.autoApprovalAllowed
+        autoApprovalAllowed: formData.autoApprovalAllowed,
+        mtmApprovalThreshold: formData.mtmApprovalThreshold ? parseFloat(formData.mtmApprovalThreshold) : null
       };
 
       const response = await fetch(BASE_URL, {
@@ -148,14 +207,24 @@ export default function DealTemplateList() {
         <Typography variant="h5">
           Deal Templates - Auto Approval Configuration
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleOpenDialog}
-          sx={{ textTransform: "none" }}
-        >
-          New Template
-        </Button>
+        <Stack direction="row" spacing={2}>
+          <Button
+            variant="outlined"
+            startIcon={<UploadFileIcon />}
+            onClick={() => setUploadDialog(true)}
+            sx={{ textTransform: "none" }}
+          >
+            Upload CSV
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleOpenDialog}
+            sx={{ textTransform: "none" }}
+          >
+            New Template
+          </Button>
+        </Stack>
       </Box>
 
       <Paper elevation={2}>
@@ -171,7 +240,7 @@ export default function DealTemplateList() {
           </TableHead>
 
           <TableBody>
-            {templates.map((template) => (
+            {templates?.map((template) => (
               <TableRow key={template.id} hover>
                 <TableCell>{template.templateName}</TableCell>
                 <TableCell>
@@ -197,7 +266,7 @@ export default function DealTemplateList() {
       </Paper>
 
       <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-        Showing all {templates.length} templates. Toggle to enable/disable auto-approval for each template.
+        Showing all {templates?.length || 0} templates. Toggle to enable/disable auto-approval for each template.
       </Typography>
 
       {/* Create Template Dialog */}
@@ -231,7 +300,7 @@ export default function DealTemplateList() {
                 onChange={(e) => setFormData({ ...formData, instrumentId: e.target.value })}
                 label="Instrument"
               >
-                {instruments.map((instrument) => (
+                {instruments?.map((instrument) => (
                   <MenuItem key={instrument.id} value={instrument.id}>
                     {instrument.instrumentCode} ({instrument.commodity} - {instrument.instrumentType})
                   </MenuItem>
@@ -260,6 +329,18 @@ export default function DealTemplateList() {
               required
               size="small"
               inputProps={{ step: "0.01" }}
+            />
+
+            <TextField
+              label="MTM Approval Threshold"
+              type="number"
+              placeholder="e.g., 500000"
+              value={formData.mtmApprovalThreshold}
+              onChange={(e) => setFormData({ ...formData, mtmApprovalThreshold: e.target.value })}
+              fullWidth
+              size="small"
+              helperText="Optional: Template-specific approval limit"
+              inputProps={{ step: "1000" }}
             />
 
             <FormControlLabel
@@ -294,6 +375,77 @@ export default function DealTemplateList() {
             </Button>
           </Stack>
         </Box>
+      </Dialog>
+
+      {/* CSV Upload Dialog */}
+      <Dialog open={uploadDialog} onClose={() => setUploadDialog(false)} maxWidth="sm" fullWidth>
+        <Box sx={{ p: 3, borderBottom: "1px solid #ddd" }}>
+          <Typography variant="h6">
+            Upload Deal Templates CSV
+          </Typography>
+        </Box>
+
+        <Stack spacing={2} sx={{ p: 3 }}>
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+              CSV Format Required:
+            </Typography>
+            <Typography variant="caption" component="pre" sx={{ fontFamily: "monospace", display: "block" }}>
+{`templateName,instrumentCode,defaultQuantity,defaultPrice,autoApprovalAllowed,mtmApprovalThreshold
+Power Forward Q1,PWR-Q1-2025,1000,75.50,true,500000
+Gas Option Feb,GAS-FEB25-OPT,500,50.00,false,`}
+            </Typography>
+          </Alert>
+
+          <Button
+            variant="outlined"
+            component="label"
+            fullWidth
+            sx={{
+              p: 2,
+              textTransform: "none"
+            }}
+          >
+            {selectedFile ? selectedFile.name : "Select CSV File"}
+            <input
+              type="file"
+              hidden
+              accept=".csv"
+              onChange={handleFileSelect}
+            />
+          </Button>
+
+          {uploadResult && (
+            <Alert severity="success">
+              <Typography variant="body2">
+                ✓ Successfully uploaded {uploadResult.successCount || uploadResult.count} templates
+                {uploadResult.failedCount > 0 && ` (${uploadResult.failedCount} failed)`}
+              </Typography>
+            </Alert>
+          )}
+        </Stack>
+
+        <Stack direction="row" spacing={2} sx={{ p: 3, borderTop: "1px solid #ddd" }}>
+          <Button
+            variant="outlined"
+            onClick={() => {
+              setUploadDialog(false);
+              setSelectedFile(null);
+              setUploadResult(null);
+            }}
+            fullWidth
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleCSVUpload}
+            disabled={!selectedFile || uploadLoading}
+            fullWidth
+          >
+            {uploadLoading ? <CircularProgress size={20} /> : "Upload"}
+          </Button>
+        </Stack>
       </Dialog>
     </Box>
   );

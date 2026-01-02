@@ -24,16 +24,50 @@ import {
  */
 export default function TradeBooking() {
   const [templates, setTemplates] = useState([]);
+  const [counterparties, setCounterparties] = useState([]);
+  const [portfolios, setPortfolios] = useState([]);
   const [templateId, setTemplateId] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [buySell, setBuySell] = useState([]);
+  const [buySell, setBuySell] = useState("");
   const [portfolio, setPortfolio] = useState("");
   const [counterparty, setCounterparty] = useState("");
+  const [spotPrice, setSpotPrice] = useState("");
   const [loading, setLoading] = useState(false);
 
-  /* ===== Load templates ===== */
+  /* ===== Load templates, counterparties, and portfolios ===== */
   useEffect(() => {
-    fetchDealTemplates().then(setTemplates);
+    fetchDealTemplates()
+      .then(setTemplates)
+      .catch(err => {
+        console.error("Failed to load templates:", err);
+        setTemplates([]);
+      });
+    
+    // Fetch counterparties
+    fetch("http://localhost:8080/api/counterparties")
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then(data => setCounterparties(Array.isArray(data) ? data : []))
+      .catch(err => {
+        console.error("Failed to load counterparties:", err);
+        setCounterparties([]);
+        alert("Warning: Could not load counterparties. Backend may not be running.");
+      });
+    
+    // Fetch portfolios
+    fetch("http://localhost:8080/api/portfolios")
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then(data => setPortfolios(Array.isArray(data) ? data : []))
+      .catch(err => {
+        console.error("Failed to load portfolios:", err);
+        setPortfolios([]);
+        alert("Warning: Could not load portfolios. Backend may not be running.");
+      });
   }, []);
 
   /* ===== Selected template ===== */
@@ -46,20 +80,27 @@ export default function TradeBooking() {
   const handleBookTrade = async () => {
     setLoading(true);
     try {
-      await bookTradeFromTemplate(
-  templateId,
-  quantity,
-  buySell,
-  counterparty,
-  portfolio
-);
-      alert("Trade booked successfully");
+      await bookTradeFromTemplate({
+        templateId: parseInt(templateId),
+        quantity: parseFloat(quantity),
+        buySell,
+        counterparty,
+        portfolio,
+        valuationConfig: {
+          spotPrice: spotPrice ? parseFloat(spotPrice) : selectedTemplate?.defaultPrice || 0
+        }
+      });
+      alert("Trade booked successfully - Status: APPROVED");
 
       setQuantity("");
       setTemplateId("");
+      setBuySell("");
+      setCounterparty("");
+      setPortfolio("");
+      setSpotPrice("");
     } catch (err) {
       console.error(err);
-      alert("Trade booking failed");
+      alert("Trade booking failed: " + (err.message || "Unknown error"));
     } finally {
       setLoading(false);
     }
@@ -87,7 +128,7 @@ export default function TradeBooking() {
             onChange={(e) => setTemplateId(e.target.value)}
             fullWidth
           >
-            {templates.map((t) => (
+            {templates?.map((t) => (
               <MenuItem key={t.id} value={t.id}>
                 {t.templateName}
               </MenuItem>
@@ -246,16 +287,43 @@ export default function TradeBooking() {
 </TextField>
 
 <TextField
+  select
   label="Counterparty"
   value={counterparty}
   onChange={(e) => setCounterparty(e.target.value)}
-/>
+  fullWidth
+  required
+>
+  {counterparties?.map((cp) => (
+    <MenuItem key={cp.id} value={cp.name}>
+      {cp.name}
+    </MenuItem>
+  ))}
+</TextField>
 
 <TextField
+  select
   label="Portfolio"
   value={portfolio}
   onChange={(e) => setPortfolio(e.target.value)}
-/>
+  fullWidth
+  required
+>
+  {portfolios?.map((p) => (
+    <MenuItem key={p.id} value={p.name}>
+      {p.name}
+    </MenuItem>
+  ))}
+</TextField>
+
+              <TextField
+                label="Spot Price (Override)"
+                value={spotPrice}
+                onChange={(e) => setSpotPrice(e.target.value)}
+                type="number"
+                fullWidth
+                helperText={`Default: ${selectedTemplate?.defaultPrice || 'N/A'}`}
+              />
             </>
           )}
 
@@ -263,7 +331,7 @@ export default function TradeBooking() {
           <Button
             variant="contained"
             color="primary"
-            disabled={!templateId || !quantity || loading}
+            disabled={!templateId || !quantity || !buySell || !counterparty || !portfolio || loading}
             onClick={handleBookTrade}
             sx={{ alignSelf: "flex-end", minWidth: 160 }}
           >

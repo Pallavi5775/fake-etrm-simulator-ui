@@ -11,7 +11,7 @@ export default function MainLayout({ children }) {
     localStorage.removeItem("token");
     
     // Redirect to auth page
-    navigate("/");
+    navigate("/auth");
   };
 
   // Get user info from localStorage
@@ -46,10 +46,41 @@ export default function MainLayout({ children }) {
         </Box>
 
         {/* Navigation Buttons */}
-        <Button component={Link} to="/config">Configuration</Button>
-        <Button component={Link} to="/fo">Front Office</Button>
-        <Button component={Link} to="/mo">Middle Office</Button>
-        <Button component={Link} to="/risk">Risk</Button>
+        <Typography variant="caption" sx={{ color: "#B0BEC5", mt: 1, mb: 0.5, fontWeight: 600 }}>
+          Front Office
+        </Typography>
+        <Button component={Link} to="/fo/trade-booking" size="small">Book Trade</Button>
+        <Button component={Link} to="/trades/search" size="small">Search Trades</Button>
+
+        <Typography variant="caption" sx={{ color: "#B0BEC5", mt: 2, mb: 0.5, fontWeight: 600 }}>
+          Risk Management
+        </Typography>
+        <Button component={Link} to="/risk/approvals" size="small">Approval Queue</Button>
+        <Button component={Link} to="/risk/positions" size="small">Positions</Button>
+        <Button component={Link} to="/risk/limits" size="small">Risk Limits</Button>
+        <Button component={Link} to="/risk/breaches" size="small">Breaches</Button>
+        <Button component={Link} to="/risk/var" size="small">VaR</Button>
+
+        <Typography variant="caption" sx={{ color: "#B0BEC5", mt: 2, mb: 0.5, fontWeight: 600 }}>
+          Operations
+        </Typography>
+        <Button component={Link} to="/mo/trade-status" size="small">Trade Status</Button>
+        <Button component={Link} to="/mo/lifecycle" size="small">Lifecycle</Button>
+        <Button component={Link} to="/mo/batch-valuation" size="small">Batch Valuation</Button>
+        <Button component={Link} to="/mo/pnl" size="small">P&L</Button>
+        <Button component={Link} to="/mo/pnl-attribution" size="small">P&L Attribution</Button>
+        <Button component={Link} to="/mo/scenarios" size="small">Scenarios</Button>
+
+        <Typography variant="caption" sx={{ color: "#B0BEC5", mt: 2, mb: 0.5, fontWeight: 600 }}>
+          Configuration
+        </Typography>
+        <Button component={Link} to="/config" size="small">Dashboard</Button>
+        <Button component={Link} to="/config/counterparties" size="small">Counterparties</Button>
+        <Button component={Link} to="/config/instruments" size="small">Instruments</Button>
+        <Button component={Link} to="/config/portfolios" size="small">Portfolios</Button>
+        <Button component={Link} to="/config/templates" size="small">Deal Templates</Button>
+        <Button component={Link} to="/config/lifecycle" size="small">Lifecycle Rules</Button>
+        <Button component={Link} to="/config/approvals" size="small">Approval Rules</Button>
 
         {/* Spacer */}
         <Box sx={{ flexGrow: 1 }} />

@@ -40,15 +40,19 @@ export default function CounterPartiesConfig() {
   const loadCounterparties = async () => {
     setLoading(true);
     try {
-      // Mock data - replace with API call
-      setCounterparties([
-        { id: 1, code: "BP", name: "British Petroleum", country: "UK", credit_rating: "AA" },
-        { id: 2, code: "SHELL", name: "Royal Dutch Shell", country: "Netherlands", credit_rating: "AA" },
-        { id: 3, code: "TRAD1", name: "Trading Corp A", country: "USA", credit_rating: "A+" },
-        { id: 4, code: "TRAD2", name: "Trading Corp B", country: "Singapore", credit_rating: "A" },
-      ]);
+      const res = await fetch("http://localhost:8080/api/counterparties");
+      if (res.ok) {
+        const data = await res.json();
+        setCounterparties(Array.isArray(data) ? data : []);
+      } else {
+        console.error("Failed to load counterparties: HTTP", res.status);
+        setCounterparties([]);
+        alert(`Failed to load counterparties (HTTP ${res.status}). Please check if backend is running.`);
+      }
     } catch (err) {
       console.error("Failed to load counterparties:", err);
+      setCounterparties([]);
+      alert("Cannot connect to backend. Please ensure the server is running at http://localhost:8080");
     } finally {
       setLoading(false);
     }
@@ -71,22 +75,74 @@ export default function CounterPartiesConfig() {
     setFormData({ code: "", name: "", country: "", credit_rating: "" });
   };
 
-  const handleSave = () => {
-    if (editingId) {
-      setCounterparties(
-        counterparties.map(c => (c.id === editingId ? { ...formData, id: editingId } : c))
-      );
-    } else {
-      setCounterparties([...counterparties, { ...formData, id: Date.now() }]);
+  const handleSave = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const token = localStorage.getItem("token");
+      
+      if (editingId) {
+        // Update existing
+        const res = await fetch(`http://localhost:8080/api/counterparties/${editingId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-User-Name": user.username || "",
+            "X-User-Role": user.role || "",
+            "Authorization": token ? `Bearer ${token}` : ""
+          },
+          body: JSON.stringify(formData)
+        });
+        if (!res.ok) throw new Error("Failed to update");
+      } else {
+        // Create new
+        const res = await fetch("http://localhost:8080/api/counterparties", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-User-Name": user.username || "",
+            "X-User-Role": user.role || "",
+            "Authorization": token ? `Bearer ${token}` : ""
+          },
+          body: JSON.stringify(formData)
+        });
+        if (!res.ok) throw new Error("Failed to create");
+      }
+      
+      await loadCounterparties();
+      handleCloseDialog();
+    } catch (err) {
+      console.error("Save failed:", err);
+      alert("Failed to save counterparty: " + err.message);
     }
-    handleCloseDialog();
   };
 
-  const handleDelete = (id) => {
-    setCounterparties(counterparties.filter(c => c.id !== id));
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this counterparty?")) return;
+    
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const token = localStorage.getItem("token");
+      
+      const res = await fetch(`http://localhost:8080/api/counterparties/${id}`, {
+        method: "DELETE",
+        headers: {
+          "X-User-Name": user.username || "",
+          "X-User-Role": user.role || "",
+          "Authorization": token ? `Bearer ${token}` : ""
+        }
+      });
+      
+      if (!res.ok) throw new Error("Failed to delete");
+      
+      await loadCounterparties();
+    } catch (err) {
+      console.error("Delete failed:", err);
+      alert("Failed to delete counterparty: " + err.message);
+    }
   };
 
   const getRatingColor = (rating) => {
+    if (!rating) return "#FF5252";
     if (rating.startsWith("AA")) return "#00C853";
     if (rating.startsWith("A")) return "#FFD600";
     return "#FF5252";
@@ -161,7 +217,7 @@ export default function CounterPartiesConfig() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {counterparties.map((counterparty) => (
+              {counterparties?.map((counterparty) => (
                 <TableRow
                   key={counterparty.id}
                   hover

@@ -174,7 +174,7 @@ export default function TradeStatusOverview() {
                     Rejection Reasons Summary
                   </Typography>
                   <Stack spacing={1}>
-                    {rejectedTrades.map((trade) => (
+                    {rejectedTrades?.map((trade) => (
                       <Box key={trade.tradeId}>
                         <Typography variant="body2">
                           <strong>{trade.tradeId}:</strong>{" "}

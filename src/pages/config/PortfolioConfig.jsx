@@ -40,15 +40,14 @@ export default function PortfolioConfig() {
   const loadPortfolios = async () => {
     setLoading(true);
     try {
-      // Mock data - replace with API call
-      setPortfolios([
-        { id: 1, code: "PROP_CRUDE", name: "Proprietary Crude", manager: "John Smith", status: "ACTIVE" },
-        { id: 2, code: "HEDGE_FX", name: "FX Hedge Portfolio", manager: "Sarah Johnson", status: "ACTIVE" },
-        { id: 3, code: "CLIENT_OIL", name: "Client Oil Book", manager: "Mike Chen", status: "ACTIVE" },
-        { id: 4, code: "LEGACY_GAS", name: "Legacy Gas Book", manager: "Emma Wilson", status: "INACTIVE" },
-      ]);
+      const res = await fetch("http://localhost:8080/api/portfolios");
+      if (res.ok) {
+        const data = await res.json();
+        setPortfolios(Array.isArray(data) ? data : []);
+      }
     } catch (err) {
       console.error("Failed to load portfolios:", err);
+      setPortfolios([]);
     } finally {
       setLoading(false);
     }
@@ -71,19 +70,70 @@ export default function PortfolioConfig() {
     setFormData({ code: "", name: "", manager: "", status: "ACTIVE" });
   };
 
-  const handleSave = () => {
-    if (editingId) {
-      setPortfolios(
-        portfolios.map(p => (p.id === editingId ? { ...formData, id: editingId } : p))
-      );
-    } else {
-      setPortfolios([...portfolios, { ...formData, id: Date.now() }]);
+  const handleSave = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const token = localStorage.getItem("token");
+      
+      if (editingId) {
+        // Update existing
+        const res = await fetch(`http://localhost:8080/api/portfolios/${editingId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-User-Name": user.username || "",
+            "X-User-Role": user.role || "",
+            "Authorization": token ? `Bearer ${token}` : ""
+          },
+          body: JSON.stringify(formData)
+        });
+        if (!res.ok) throw new Error("Failed to update");
+      } else {
+        // Create new
+        const res = await fetch("http://localhost:8080/api/portfolios", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-User-Name": user.username || "",
+            "X-User-Role": user.role || "",
+            "Authorization": token ? `Bearer ${token}` : ""
+          },
+          body: JSON.stringify(formData)
+        });
+        if (!res.ok) throw new Error("Failed to create");
+      }
+      
+      await loadPortfolios();
+      handleCloseDialog();
+    } catch (err) {
+      console.error("Save failed:", err);
+      alert("Failed to save portfolio: " + err.message);
     }
-    handleCloseDialog();
   };
 
-  const handleDelete = (id) => {
-    setPortfolios(portfolios.filter(p => p.id !== id));
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this portfolio?")) return;
+    
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const token = localStorage.getItem("token");
+      
+      const res = await fetch(`http://localhost:8080/api/portfolios/${id}`, {
+        method: "DELETE",
+        headers: {
+          "X-User-Name": user.username || "",
+          "X-User-Role": user.role || "",
+          "Authorization": token ? `Bearer ${token}` : ""
+        }
+      });
+      
+      if (!res.ok) throw new Error("Failed to delete");
+      
+      await loadPortfolios();
+    } catch (err) {
+      console.error("Delete failed:", err);
+      alert("Failed to delete portfolio: " + err.message);
+    }
   };
 
   const getStatusColor = (status) => {
@@ -170,7 +220,7 @@ export default function PortfolioConfig() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {portfolios.map((portfolio) => (
+              {portfolios?.map((portfolio) => (
                 <TableRow
                   key={portfolio.id}
                   hover

@@ -24,7 +24,7 @@ export default function AuthPage() {
     password: "",
     email: "",
     fullName: "",
-    role: "RISK"
+    role: ""
   });
 
   useEffect(() => {
@@ -34,11 +34,24 @@ export default function AuthPage() {
       navigate("/config");
     }
 
-    // Fetch roles
-    fetch(`${BASE_URL}/roles`)
-      .then(r => r.json())
-      .then(setRoles)
-      .catch(err => console.error("Failed to load roles:", err));
+    // Fetch active roles
+    fetch(`${BASE_URL}/roles/active`)
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then(data => {
+        console.log("Roles API response:", data); // Debug log
+        // Handle array response or object with roles property
+        const rolesList = Array.isArray(data) ? data : (data.roles || []);
+        console.log("Parsed roles list:", rolesList); // Debug log
+        setRoles(rolesList);
+      })
+      .catch(err => {
+        console.error("Failed to load roles:", err);
+        setError("Warning: Could not load roles. Using default role.");
+        setRoles([{ value: "RISK", label: "Risk Manager" }]);
+      });
   }, [navigate]);
 
   const handleLogin = async (e) => {
@@ -247,9 +260,9 @@ export default function AuthPage() {
                     setRegisterData({ ...registerData, role: e.target.value })
                   }
                 >
-                  {roles.map((role) => (
-                    <MenuItem key={role.value} value={role.value}>
-                      {role.label}
+                  {roles?.map((role) => (
+                    <MenuItem key={role.roleName} value={role.roleName}>
+                      {role.displayName}
                     </MenuItem>
                   ))}
                 </TextField>

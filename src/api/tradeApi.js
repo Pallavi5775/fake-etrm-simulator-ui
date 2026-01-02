@@ -8,45 +8,49 @@ import httpClient from "./httpClient";
  * Fetch deal templates for booking
  */
 export async function fetchDealTemplates() {
-  const res = await httpClient.get("/templates");
-  return res.data;
+  try {
+    const res = await httpClient.get("/templates");
+    return res.data;
+  } catch (err) {
+    console.error("Failed to fetch deal templates:", err);
+    throw new Error(err.message === "Failed to fetch" 
+      ? "Cannot connect to backend. Please ensure the server is running."
+      : err.message);
+  }
 }
 
 /**
  * Book trade from template
  */
-const BASE_URL = "http://localhost:8080/api/trades";
-
-export async function bookTradeFromTemplate(
-  templateId,
-  quantity,
-  buySell,
-  counterparty,
-  portfolio
-) {
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const token = localStorage.getItem("token");
-  
-  const url = new URL(
-    `http://localhost:8080/api/trades/book-from-template/${templateId}`
-  );
-
-  url.searchParams.append("quantity", quantity);
-  url.searchParams.append("buySell", buySell);
-  url.searchParams.append("counterparty", counterparty);
-  url.searchParams.append("portfolio", portfolio);
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-User-Name": user.username || "",
-      "X-User-Role": user.role || "",
-      "Authorization": token ? `Bearer ${token}` : ""
+export async function bookTradeFromTemplate(payload) {
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const token = localStorage.getItem("token");
+    
+    const res = await fetch("http://localhost:8080/api/trades/book-from-template", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-User-Name": user.username || "",
+        "X-User-Role": user.role || "",
+        "Authorization": token ? `Bearer ${token}` : ""
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Booking failed (HTTP ${res.status}): ${errorText}`);
     }
-  });
-  if (!res.ok) throw new Error("Booking failed");
-  return res.json();
+    
+    return res.json();
+  } catch (err) {
+    console.error("Error booking trade:", err);
+    if (err.message === "Failed to fetch") {
+      throw new Error("Cannot connect to backend. Please ensure the server is running at http://localhost:8080");
+    }
+    throw err;
+  }
 }
 
 /* =========================

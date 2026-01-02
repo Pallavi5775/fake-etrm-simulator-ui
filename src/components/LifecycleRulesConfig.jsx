@@ -35,7 +35,7 @@ export default function LifecycleRulesConfig() {
         </TableHead>
 
         <TableBody>
-          {rules.map((r, i) => (
+          {rules?.map((r, i) => (
             <TableRow key={i}>
               <TableCell>{r.from}</TableCell>
               <TableCell>{r.to}</TableCell>
