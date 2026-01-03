@@ -121,7 +121,10 @@ export default function ApprovalRulesConfig() {
           "X-User-Role": user.role || "",
           "Authorization": token ? `Bearer ${token}` : ""
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          createdByUser: user.username || "UNKNOWN"
+        })
       });
 
       if (!response.ok) {

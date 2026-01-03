@@ -35,7 +35,10 @@ export async function bookTradeFromTemplate(payload) {
         "X-User-Role": user.role || "",
         "Authorization": token ? `Bearer ${token}` : ""
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        ...payload,
+        createdByUser: user.username || "UNKNOWN"
+      })
     });
     
     if (!res.ok) {

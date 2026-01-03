@@ -103,7 +103,10 @@ export default function CounterPartiesConfig() {
             "X-User-Role": user.role || "",
             "Authorization": token ? `Bearer ${token}` : ""
           },
-          body: JSON.stringify(formData)
+          body: JSON.stringify({
+            ...formData,
+            createdByUser: user.username || "UNKNOWN"
+          })
         });
         if (!res.ok) throw new Error("Failed to create");
       }

@@ -81,6 +81,7 @@ export default function MainLayout({ children }) {
         <Button component={Link} to="/config/templates" size="small">Deal Templates</Button>
         <Button component={Link} to="/config/lifecycle" size="small">Lifecycle Rules</Button>
         <Button component={Link} to="/config/approvals" size="small">Approval Rules</Button>
+        <Button component={Link} to="/config/forward-curves" size="small">Forward Curves</Button>
 
         {/* Spacer */}
         <Box sx={{ flexGrow: 1 }} />

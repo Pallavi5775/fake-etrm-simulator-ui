@@ -187,8 +187,9 @@ export default function InstrumentConfig() {
   const handleSave = async () => {
     setError(null);
     try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
       let endpoint = "";
-      let payload = { ...formData, instrumentType };
+      let payload = { ...formData, instrumentType, createdByUser: user.username || "UNKNOWN" };
 
       // For Options, include option-specific fields
       if (instrumentType === "OPTION") {
@@ -216,10 +217,15 @@ export default function InstrumentConfig() {
         throw new Error("Unknown instrument type");
       }
 
+      const token = localStorage.getItem("token");
+      
       const response = await fetch(`${API_BASE}${endpoint}`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "X-User-Name": user.username || "",
+          "X-User-Role": user.role || "",
+          "Authorization": token ? `Bearer ${token}` : ""
         },
         body: JSON.stringify(payload)
       });

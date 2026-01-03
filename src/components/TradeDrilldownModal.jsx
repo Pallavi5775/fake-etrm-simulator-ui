@@ -11,12 +11,13 @@ import {
 } from "@mui/material";
 
 import ValuationChart from "./ValuationChart";
+import TradeLifecycleActions from "./TradeLifecycleActions";
 
 /**
  * Trade Drill-down Modal
  * Endur-style trade details + valuation history
  */
-export default function TradeDrilldownModal({ trade, open, onClose }) {
+export default function TradeDrilldownModal({ trade, open, onClose, onRefresh }) {
   const [showChart, setShowChart] = useState(false);
 
   // Reset chart visibility when trade changes
@@ -31,7 +32,15 @@ export default function TradeDrilldownModal({ trade, open, onClose }) {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
-        Trade #{trade.tradeId} – {trade.instrumentCode}
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Typography variant="h6">
+            Trade #{trade.tradeId} – {trade.instrumentCode}
+          </Typography>
+          <TradeLifecycleActions trade={trade} onActionComplete={() => {
+            onRefresh?.();
+            onClose();
+          }} />
+        </Stack>
       </DialogTitle>
 
       <DialogContent>

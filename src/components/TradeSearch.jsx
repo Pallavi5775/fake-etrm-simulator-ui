@@ -11,6 +11,7 @@ import HistoryIcon from "@mui/icons-material/History";
 import { useNavigate } from "react-router-dom";
 import LoadingSpinner from "./shared/LoadingSpinner";
 import Toast from "./shared/Toast";
+import TradeLifecycleActions from "./TradeLifecycleActions";
 
 const BASE_URL = "http://localhost:8080/api/trades";
 
@@ -228,7 +229,13 @@ export default function TradeSearch() {
   };
 
   const handleAmendTrade = (trade) => {
-    navigate(`/fo/trade-booking/amend/${trade.tradeId}`, { state: { trade } });
+    // Amend functionality now handled by TradeLifecycleActions component
+    // This function kept for backward compatibility but does nothing
+    setToast({
+      open: true,
+      message: "Use the Edit icon in the actions column to amend trades",
+      severity: "info"
+    });
   };
 
   const handleViewHistory = (trade) => {
@@ -494,7 +501,8 @@ export default function TradeSearch() {
                   border: '1px solid',
                   borderColor: 'divider',
                   '&:hover': { boxShadow: 3, cursor: 'pointer' },
-                  mb: 2,
+                  mb: 3,
+                  p: 1,
                   width: '100%'
                 }}
               >
@@ -538,17 +546,6 @@ export default function TradeSearch() {
                                 <VisibilityIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                            {trade.status === "APPROVED" && (
-                              <Tooltip title="Amend Trade">
-                                <IconButton
-                                  size="small"
-                                  color="secondary"
-                                  onClick={() => handleAmendTrade(trade)}
-                                >
-                                  <EditIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            )}
                             <Tooltip title="View History">
                               <IconButton
                                 size="small"
@@ -557,6 +554,7 @@ export default function TradeSearch() {
                                 <HistoryIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
+                            <TradeLifecycleActions trade={trade} onActionComplete={fetchAllTrades} />
                           </Stack>
                         </Stack>
                       </Grid>
@@ -573,6 +571,43 @@ export default function TradeSearch() {
                           <Typography variant="body2"><strong>Counterparty:</strong> {trade.counterparty}</Typography>
                           <Typography variant="body2"><strong>Created By:</strong> {trade.createdBy}</Typography>
                           <Typography variant="body2"><strong>Created At:</strong> {formatDate(trade.createdAt)}</Typography>
+                          {trade.pendingApprovalRole && (
+                            <Typography variant="body2">
+                              <strong>Pending Approval:</strong> 
+                              <Chip 
+                                label={trade.pendingApprovalRole} 
+                                size="small" 
+                                sx={{ 
+                                  ml: 1,
+                                  backgroundColor: "#FFD60020",
+                                  color: "#FFD600",
+                                  fontWeight: 600,
+                                  border: "1px solid #FFD60060"
+                                }} 
+                              />
+                            </Typography>
+                          )}
+                          {trade.currentApprovalLevel && (
+                            <Typography variant="body2">
+                              <strong>Approval Level:</strong> {trade.currentApprovalLevel}
+                            </Typography>
+                          )}
+                          {trade.matchedRuleName && (
+                            <Typography variant="body2">
+                              <strong>Match Rule:</strong> 
+                              <Chip 
+                                label={trade.matchedRuleName} 
+                                size="small" 
+                                sx={{ 
+                                  ml: 1,
+                                  backgroundColor: "#9C27B020",
+                                  color: "#CE93D8",
+                                  fontWeight: 600,
+                                  border: "1px solid #9C27B060"
+                                }} 
+                              />
+                            </Typography>
+                          )}
                         </Stack>
                       </Grid>
 

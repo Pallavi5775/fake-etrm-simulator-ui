@@ -172,7 +172,8 @@ export default function DealTemplateList() {
         defaultQuantity: formData.defaultQuantity ? parseFloat(formData.defaultQuantity) : null,
         defaultPrice: parseFloat(formData.defaultPrice),
         autoApprovalAllowed: formData.autoApprovalAllowed,
-        mtmApprovalThreshold: formData.mtmApprovalThreshold ? parseFloat(formData.mtmApprovalThreshold) : null
+        mtmApprovalThreshold: formData.mtmApprovalThreshold ? parseFloat(formData.mtmApprovalThreshold) : null,
+        createdByUser: user.username || "UNKNOWN"
       };
 
       const response = await fetch(BASE_URL, {

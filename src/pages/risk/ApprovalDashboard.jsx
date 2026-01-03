@@ -15,7 +15,6 @@ import Toast from "../../components/shared/Toast";
 const BASE_URL = "http://localhost:8080/api";
 
 const FILTER_OPTIONS = {
-  status: ["PENDING", "APPROVED", "REJECTED"],
   approvalRole: ["TRADER", "RISK_MANAGER", "OPERATIONS", "SENIOR_TRADER"]
 };
 
@@ -27,8 +26,10 @@ export default function ApprovalDashboard() {
   const [loading, setLoading] = useState(true);
   const [approvals, setApprovals] = useState([]);
   const [error, setError] = useState(null);
+  const [statuses, setStatuses] = useState([]);
+  const [portfolios, setPortfolios] = useState([]);
   const [filters, setFilters] = useState({
-    status: "PENDING",
+    status: "PENDING_APPROVAL",
     approvalRole: "",
     portfolio: "",
     minMtm: "",
@@ -44,7 +45,72 @@ export default function ApprovalDashboard() {
 
   useEffect(() => {
     fetchApprovals();
+    fetchStatuses();
+    fetchPortfolios();
   }, []);
+
+  const fetchStatuses = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(`${BASE_URL}/trades/statuses`, {
+        headers: {
+          "X-User-Name": user.username || "",
+          "X-User-Role": user.role || "",
+          "Authorization": token ? `Bearer ${token}` : ""
+        }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        // Backend returns [{name, code}], extract as array of objects
+        setStatuses(Array.isArray(data) ? data : [
+          {name: "Pending Approval", code: "PENDING_APPROVAL"},
+          {name: "Approved", code: "APPROVED"},
+          {name: "Rejected", code: "REJECTED"}
+        ]);
+      } else {
+        // Backend endpoint not available, use defaults
+        setStatuses([
+          {name: "Pending Approval", code: "PENDING_APPROVAL"},
+          {name: "Approved", code: "APPROVED"},
+          {name: "Rejected", code: "REJECTED"}
+        ]);
+      }
+    } catch (err) {
+      console.error("Error fetching statuses:", err);
+      // Fallback to default statuses
+      setStatuses([
+        {name: "Pending Approval", code: "PENDING_APPROVAL"},
+        {name: "Approved", code: "APPROVED"},
+        {name: "Rejected", code: "REJECTED"}
+      ]);
+    }
+  };
+
+  const fetchPortfolios = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(`${BASE_URL}/portfolios`, {
+        headers: {
+          "X-User-Name": user.username || "",
+          "X-User-Role": user.role || "",
+          "Authorization": token ? `Bearer ${token}` : ""
+        }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setPortfolios(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error("Error fetching portfolios:", err);
+      setPortfolios([]);
+    }
+  };
 
   const fetchApprovals = async () => {
     setLoading(true);
@@ -53,11 +119,12 @@ export default function ApprovalDashboard() {
     try {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       const token = localStorage.getItem("token");
+      const userRole = user.role || "RISK";
 
-      const res = await fetch(`${BASE_URL}/approval/pending`, {
+      const res = await fetch(`${BASE_URL}/trades/approval/pending?role=${userRole}`, {
         headers: {
           "X-User-Name": user.username || "",
-          "X-User-Role": user.role || "",
+          "X-User-Role": userRole,
           "Authorization": token ? `Bearer ${token}` : ""
         }
       });
@@ -78,20 +145,21 @@ export default function ApprovalDashboard() {
   };
 
   const calculateSummary = (data) => {
-    const pending = data.filter(a => a.status === "PENDING").length;
-    const approved = data.filter(a => a.status === "APPROVED").length;
-    const rejected = data.filter(a => a.status === "REJECTED").length;
-    const totalMtm = data.reduce((sum, a) => sum + (a.trade?.mtm || 0), 0);
+    const pending = data.filter(t => t.status === "PENDING_APPROVAL").length;
+    const approved = data.filter(t => t.status === "APPROVED").length;
+    const rejected = data.filter(t => t.status === "REJECTED").length;
+    const totalMtm = data.reduce((sum, t) => sum + (t.mtm || 0), 0);
 
     setSummary({ pending, approved, rejected, totalMtm });
   };
 
-  const handleQuickApprove = async (approvalId, tradeId) => {
+  const handleQuickApprove = async (tradeId) => {
     try {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       const token = localStorage.getItem("token");
+      const trade = approvals.find(t => t.tradeId === tradeId);
 
-      const res = await fetch(`${BASE_URL}/approval/${approvalId}/approve`, {
+      const res = await fetch(`${BASE_URL}/trades/${tradeId}/approve`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -101,7 +169,8 @@ export default function ApprovalDashboard() {
         },
         body: JSON.stringify({
           approvedBy: user.username,
-          comments: "Quick approval from dashboard"
+          comments: "Quick approval from dashboard",
+          pnlDate: trade?.pnlDate || new Date().toISOString().split('T')[0]
         })
       });
 
@@ -129,15 +198,16 @@ export default function ApprovalDashboard() {
     }
   };
 
-  const handleQuickReject = async (approvalId, tradeId) => {
+  const handleQuickReject = async (tradeId) => {
     const reason = prompt("Enter rejection reason:");
     if (!reason) return;
 
     try {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       const token = localStorage.getItem("token");
+      const trade = approvals.find(t => t.tradeId === tradeId);
 
-      const res = await fetch(`${BASE_URL}/approval/${approvalId}/reject`, {
+      const res = await fetch(`${BASE_URL}/trades/${tradeId}/reject`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -147,7 +217,8 @@ export default function ApprovalDashboard() {
         },
         body: JSON.stringify({
           rejectedBy: user.username,
-          reason: reason
+          reason: reason,
+          pnlDate: trade?.pnlDate || new Date().toISOString().split('T')[0]
         })
       });
 
@@ -175,17 +246,17 @@ export default function ApprovalDashboard() {
     }
   };
 
-  const handleViewDetail = (approval) => {
-    navigate(`/risk/approval/${approval.id}`, { state: { approval } });
+  const handleViewDetail = (trade) => {
+    navigate(`/trade/${trade.tradeId}`, { state: { trade } });
   };
 
   const getFilteredApprovals = () => {
-    return approvals.filter(approval => {
-      if (filters.status && approval.status !== filters.status) return false;
-      if (filters.approvalRole && approval.approvalRole !== filters.approvalRole) return false;
-      if (filters.portfolio && approval.trade?.portfolio !== filters.portfolio) return false;
+    return approvals.filter(trade => {
+      if (filters.status && trade.status !== filters.status) return false;
+      if (filters.approvalRole && trade.pendingApprovalRole !== filters.approvalRole) return false;
+      if (filters.portfolio && trade.portfolio !== filters.portfolio) return false;
       
-      const mtm = approval.trade?.mtm || 0;
+      const mtm = trade.mtm || 0;
       if (filters.minMtm && mtm < parseFloat(filters.minMtm)) return false;
       if (filters.maxMtm && mtm > parseFloat(filters.maxMtm)) return false;
 
@@ -195,15 +266,14 @@ export default function ApprovalDashboard() {
 
   const columns = [
     {
-      field: "id",
-      label: "ID",
-      sortable: true
-    },
-    {
       field: "tradeId",
       label: "Trade ID",
       sortable: true,
-      render: (val, row) => row.trade?.tradeId || val
+      render: (val) => (
+        <Typography variant="body2" fontFamily="monospace">
+          {val?.substring(0, 13)}...
+        </Typography>
+      )
     },
     {
       field: "status",
@@ -214,7 +284,7 @@ export default function ApprovalDashboard() {
           label={val}
           size="small"
           color={
-            val === "PENDING" ? "warning" :
+            val === "PENDING_APPROVAL" ? "warning" :
             val === "APPROVED" ? "success" :
             "error"
           }
@@ -222,28 +292,36 @@ export default function ApprovalDashboard() {
       )
     },
     {
-      field: "approvalRole",
+      field: "pendingApprovalRole",
       label: "Required Role",
       sortable: true
     },
     {
       field: "portfolio",
       label: "Portfolio",
-      sortable: true,
-      render: (val, row) => row.trade?.portfolio || "-"
+      sortable: true
     },
     {
       field: "counterparty",
       label: "Counterparty",
+      sortable: true
+    },
+    {
+      field: "instrumentSymbol",
+      label: "Instrument",
       sortable: true,
-      render: (val, row) => row.trade?.counterparty || "-"
+      render: (val) => (
+        <Typography variant="body2" fontFamily="monospace">
+          {val}
+        </Typography>
+      )
     },
     {
       field: "mtm",
       label: "MTM (USD)",
       sortable: true,
-      render: (val, row) => {
-        const mtm = row.trade?.mtm || 0;
+      render: (val) => {
+        const mtm = val || 0;
         return (
           <Typography
             variant="body2"
@@ -260,8 +338,19 @@ export default function ApprovalDashboard() {
       }
     },
     {
-      field: "ruleName",
+      field: "pnlDate",
+      label: "PnL Date",
+      sortable: true,
+      render: (val) => val ? new Date(val).toLocaleDateString() : "-"
+    },
+    {
+      field: "matchedRuleName",
       label: "Rule",
+      sortable: true
+    },
+    {
+      field: "currentApprovalLevel",
+      label: "Level",
       sortable: true
     },
     {
@@ -282,14 +371,14 @@ export default function ApprovalDashboard() {
           >
             <VisibilityIcon fontSize="small" />
           </IconButton>
-          {row.status === "PENDING" && (
+          {row.status === "PENDING_APPROVAL" && (
             <>
               <IconButton
                 size="small"
                 color="success"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleQuickApprove(row.id, row.trade?.tradeId);
+                  handleQuickApprove(row.tradeId);
                 }}
                 title="Quick Approve"
               >
@@ -300,7 +389,7 @@ export default function ApprovalDashboard() {
                 color="error"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleQuickReject(row.id, row.trade?.tradeId);
+                  handleQuickReject(row.tradeId);
                 }}
                 title="Quick Reject"
               >
@@ -328,7 +417,11 @@ export default function ApprovalDashboard() {
         <Button
           variant="outlined"
           startIcon={<RefreshIcon />}
-          onClick={fetchApprovals}
+          onClick={() => {
+            fetchApprovals();
+            fetchStatuses();
+            fetchPortfolios();
+          }}
         >
           Refresh
         </Button>
@@ -410,10 +503,13 @@ export default function ApprovalDashboard() {
               size="small"
               value={filters.status}
               onChange={e => setFilters({ ...filters, status: e.target.value })}
+              SelectProps={{
+                onOpen: fetchStatuses
+              }}
             >
               <MenuItem value="">All</MenuItem>
-              {FILTER_OPTIONS.status?.map(opt => (
-                <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+              {statuses?.map(opt => (
+                <MenuItem key={opt.code} value={opt.code}>{opt.name}</MenuItem>
               ))}
             </TextField>
           </Grid>
@@ -434,13 +530,18 @@ export default function ApprovalDashboard() {
           </Grid>
           <Grid item xs={12} sm={6} md={2.4}>
             <TextField
+              select
               label="Portfolio"
               fullWidth
               size="small"
               value={filters.portfolio}
               onChange={e => setFilters({ ...filters, portfolio: e.target.value })}
-              placeholder="e.g., CRUDE_FO"
-            />
+            >
+              <MenuItem value="">All</MenuItem>
+              {portfolios?.map(p => (
+                <MenuItem key={p.id} value={p.name}>{p.name}</MenuItem>
+              ))}
+            </TextField>
           </Grid>
           <Grid item xs={12} sm={6} md={2.4}>
             <TextField
@@ -469,7 +570,7 @@ export default function ApprovalDashboard() {
       <DataTable
         columns={columns}
         rows={filteredApprovals}
-        defaultSortBy="id"
+        defaultSortBy="tradeId"
         defaultSortDirection="desc"
         pageSize={25}
         onRowClick={handleViewDetail}

@@ -73,7 +73,7 @@ export default function PnlDashboard() {
           "X-User-Role": user.role || "",
           "Authorization": token ? `Bearer ${token}` : ""
         },
-        body: JSON.stringify({ date })
+        body: JSON.stringify({ pnlDate: date })
       });
 
       if (res.ok) {

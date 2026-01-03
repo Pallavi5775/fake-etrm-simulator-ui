@@ -14,6 +14,7 @@ import ConfigDashboard from "./pages/config/ConfigDashboard";
 import CounterPartiesConfig from "./pages/config/CounterPartiesConfig";
 import InstrumentConfig from "./pages/config/InstrumentConfig";
 import PortfolioConfig from "./pages/config/PortfolioConfig";
+import ForwardCurvesConfig from "./pages/config/ForwardCurvesConfig";
 import DealTemplateConfig from "./components/DealTemplateConfig";
 import LifecycleRulesConfig from "./components/LifecycleRulesConfig";
 import ApprovalRulesConfig from "./components/ApprovalRulesConfig";
@@ -35,6 +36,7 @@ import ScenarioBuilder from "./pages/mo/ScenarioBuilder";
 // NEW: Trade Components
 import TradeSearch from "./components/TradeSearch";
 import TradeHistory from "./components/TradeHistory";
+import TradeDetail from "./pages/TradeDetail";
 
 // Layout
 import MainLayout from "./layout/MainLayout";
@@ -62,7 +64,9 @@ function App() {
                   <Routes>
                   {/* Front Office */}
                   <Route path="/fo/trade-booking" element={<TradeBooking />} />
+                  <Route path="/fo/trade-booking/amend/:tradeId" element={<TradeBooking />} />
                   <Route path="/trades/search" element={<TradeSearch />} />
+                  <Route path="/trade/:tradeId" element={<TradeDetail />} />
                   <Route path="/trade/:tradeId/history" element={<TradeHistory />} />
 
                   {/* Risk Management */}
@@ -89,6 +93,7 @@ function App() {
                   <Route path="/config/templates" element={<DealTemplateConfig />} />
                   <Route path="/config/lifecycle" element={<LifecycleRulesConfig />} />
                   <Route path="/config/approvals" element={<ApprovalRulesConfig />} />
+                  <Route path="/config/forward-curves" element={<ForwardCurvesConfig />} />
 
                   {/* Default */}
                   <Route path="/" element={<Navigate to="/risk/approvals" />} />

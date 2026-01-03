@@ -32,6 +32,10 @@ export default function TradeBooking() {
   const [portfolio, setPortfolio] = useState("");
   const [counterparty, setCounterparty] = useState("");
   const [spotPrice, setSpotPrice] = useState("");
+  const [tradeDate, setTradeDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+  });
   const [loading, setLoading] = useState(false);
 
   /* ===== Load templates, counterparties, and portfolios ===== */
@@ -86,6 +90,7 @@ export default function TradeBooking() {
         buySell,
         counterparty,
         portfolio,
+        tradeDate,
         valuationConfig: {
           spotPrice: spotPrice ? parseFloat(spotPrice) : selectedTemplate?.defaultPrice || 0
         }
@@ -98,6 +103,7 @@ export default function TradeBooking() {
       setCounterparty("");
       setPortfolio("");
       setSpotPrice("");
+      setTradeDate(new Date().toISOString().split('T')[0]);
     } catch (err) {
       console.error(err);
       alert("Trade booking failed: " + (err.message || "Unknown error"));
@@ -274,6 +280,17 @@ export default function TradeBooking() {
                 type="number"
                 fullWidth
                 helperText={`Default: ${selectedTemplate.defaultQuantity}`}
+              />
+
+              <TextField
+                label="Trade Date"
+                type="date"
+                value={tradeDate}
+                onChange={(e) => setTradeDate(e.target.value)}
+                fullWidth
+                required
+                InputLabelProps={{ shrink: true }}
+                helperText="Date when the trade is executed"
               />
 
               <TextField
