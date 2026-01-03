@@ -11,7 +11,7 @@ import LoadingSpinner from "../../components/shared/LoadingSpinner";
 import Toast from "../../components/shared/Toast";
 import ConfirmDialog from "../../components/shared/ConfirmDialog";
 
-const BASE_URL = "http://localhost:8080/api";
+const BASE_URL = "https://fake-etrm-simulator.onrender.com/api";
 
 /**
  * Approval Detail View - Shows full trade details with approval actions

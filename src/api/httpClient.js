@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const httpClient = axios.create({
-  baseURL: "http://localhost:8080/api",
+  baseURL: "https://fake-etrm-simulator.onrender.com/api",
   headers: {
     "Content-Type": "application/json",
   },

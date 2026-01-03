@@ -50,6 +50,7 @@ export default function MainLayout({ children }) {
           Front Office
         </Typography>
         <Button component={Link} to="/fo/trade-booking" size="small">Book Trade</Button>
+        <Button component={Link} to="/fo/multi-leg-booking" size="small">Multi-Leg Spreads</Button>
         <Button component={Link} to="/trades/search" size="small">Search Trades</Button>
 
         <Typography variant="caption" sx={{ color: "#B0BEC5", mt: 2, mb: 0.5, fontWeight: 600 }}>
@@ -79,7 +80,7 @@ export default function MainLayout({ children }) {
         <Button component={Link} to="/config/instruments" size="small">Instruments</Button>
         <Button component={Link} to="/config/portfolios" size="small">Portfolios</Button>
         <Button component={Link} to="/config/templates" size="small">Deal Templates</Button>
-        <Button component={Link} to="/config/lifecycle" size="small">Lifecycle Rules</Button>
+        {/* <Button component={Link} to="/config/lifecycle" size="small">Lifecycle Rules</Button> */}
         <Button component={Link} to="/config/approvals" size="small">Approval Rules</Button>
         <Button component={Link} to="/config/forward-curves" size="small">Forward Curves</Button>
 

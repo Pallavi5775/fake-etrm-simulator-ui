@@ -25,7 +25,16 @@ export default function ValuationChart({ tradeId }) {
 
     setLoading(true);
     fetchValuationHistory(tradeId)
-      .then(setData)
+      .then((result) => {
+        if (Array.isArray(result)) {
+          setData(result);
+        } else if (result && typeof result === 'object' && result !== null) {
+          // If backend returns a single object, wrap in array
+          setData([result]);
+        } else {
+          setData([]);
+        }
+      })
       .finally(() => setLoading(false));
   }, [tradeId]);
 

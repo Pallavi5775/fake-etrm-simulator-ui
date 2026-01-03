@@ -12,7 +12,7 @@ import LoadingSpinner from "../../components/shared/LoadingSpinner";
 import Toast from "../../components/shared/Toast";
 import DataTable from "../../components/shared/DataTable";
 
-const BASE_URL = "http://localhost:8080/api";
+const BASE_URL = "https://fake-etrm-simulator.onrender.com/api";
 
 /**
  * Daily P&L Dashboard with breakdown by portfolio and commodity

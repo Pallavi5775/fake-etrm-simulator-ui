@@ -22,7 +22,7 @@ import {
 } from "@mui/material";
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, UploadFile as UploadFileIcon } from "@mui/icons-material";
 
-const API_BASE = "http://localhost:8080/api";
+const API_BASE = "https://fake-etrm-simulator.onrender.com/api";
 
 /**
  * Instrument Configuration – Connected to Backend
@@ -658,6 +658,22 @@ export default function InstrumentConfig() {
             }}
           >
             Save
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={handleCloseDialog}
+            sx={{
+              textTransform: "none",
+              borderColor: "#252862",
+              color: "#B388FF",
+              ml: 1,
+              "&:hover": {
+                borderColor: "#7C4DFF",
+                backgroundColor: "#7C4DFF20"
+              }
+            }}
+          >
+            OK
           </Button>
         </Stack>
       </Dialog>

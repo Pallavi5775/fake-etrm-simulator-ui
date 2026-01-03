@@ -11,7 +11,7 @@ import LoadingSpinner from "../../components/shared/LoadingSpinner";
 import Toast from "../../components/shared/Toast";
 import DataTable from "../../components/shared/DataTable";
 
-const BASE_URL = "http://localhost:8080/api";
+const BASE_URL = "https://fake-etrm-simulator.onrender.com/api";
 
 /**
  * Active Limit Breaches View with Resolution Actions

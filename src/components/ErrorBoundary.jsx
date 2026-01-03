@@ -48,7 +48,7 @@ class ErrorBoundary extends React.Component {
             </Typography>
             <Alert severity="warning" sx={{ mb: 2, textAlign: "left" }}>
               <ul style={{ margin: 0, paddingLeft: 20 }}>
-                <li>Backend server not running at http://localhost:8080</li>
+                <li>Backend server not running at https://fake-etrm-simulator.onrender.com</li>
                 <li>Network connectivity issues</li>
                 <li>Invalid data format from API</li>
                 <li>Browser compatibility issues</li>

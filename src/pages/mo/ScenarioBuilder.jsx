@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getPortfolios } from '../../api/portfolioApi';
+import { getCommodities } from '../../api/commoditiesApi';
 import {
   Box, Typography, Paper, Stack, Button, Grid, Card, CardContent,
   TextField, MenuItem, Chip, Accordion, AccordionSummary, AccordionDetails
@@ -11,7 +13,7 @@ import LoadingSpinner from "../../components/shared/LoadingSpinner";
 import Toast from "../../components/shared/Toast";
 import DataTable from "../../components/shared/DataTable";
 
-const BASE_URL = "http://localhost:8080/api";
+const BASE_URL = "https://fake-etrm-simulator.onrender.com/api";
 
 const SCENARIO_TYPES = [
   { value: "SPOT_SHOCK", label: "Spot Price Shock" },
@@ -41,8 +43,17 @@ export default function ScenarioBuilder() {
     portfolio: "",
     commodity: "",
     magnitude: "",
-    shockDate: new Date().toISOString().split("T")[0]
+    shockDate: new Date().toISOString().split("T")[0],
+    baseDate: new Date().toISOString().split("T")[0],
+    parameters: "",
+    portfolioFilter: ""
   });
+  const [portfolios, setPortfolios] = useState([]);
+  const [commodities, setCommodities] = useState([]);
+    useEffect(() => {
+      getPortfolios().then(res => setPortfolios(res.data || []));
+      getCommodities().then(res => setCommodities(res.data || []));
+    }, []);
   const [toast, setToast] = useState({ open: false, message: "", severity: "info" });
 
   const handleRunScenario = async () => {
@@ -61,8 +72,16 @@ export default function ScenarioBuilder() {
           "Authorization": token ? `Bearer ${token}` : ""
         },
         body: JSON.stringify({
-          ...config,
-          magnitude: parseFloat(config.magnitude)
+          scenarioName: config.scenarioName,
+          scenarioType: config.scenarioType,
+          baseDate: config.baseDate,
+          parameters: JSON.stringify({
+            magnitude: parseFloat(config.magnitude),
+            commodity: config.commodity,
+            shockDate: config.shockDate
+          }),
+          portfolioFilter: config.portfolio || "",
+          createdBy: user.username || "user"
         })
       });
 
@@ -249,22 +268,34 @@ export default function ScenarioBuilder() {
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
             <TextField
+              select
               label="Portfolio"
               fullWidth
               value={config.portfolio}
               onChange={e => setConfig({ ...config, portfolio: e.target.value })}
-              placeholder="e.g., CRUDE_FO"
-            />
+              placeholder="Select portfolio"
+            >
+              <MenuItem value="">All</MenuItem>
+              {portfolios.map(p => (
+                <MenuItem key={String(p.id)} value={p.name}>{p.name}</MenuItem>
+              ))}
+            </TextField>
           </Grid>
 
           <Grid item xs={12} sm={6} md={4}>
             <TextField
+              select
               label="Commodity (optional)"
               fullWidth
               value={config.commodity}
               onChange={e => setConfig({ ...config, commodity: e.target.value })}
-              placeholder="e.g., CRUDE_OIL"
-            />
+              placeholder="Select commodity"
+            >
+              <MenuItem value="">All</MenuItem>
+              {commodities.map(c => (
+                <MenuItem key={String(c.id)} value={c.name}>{c.name}</MenuItem>
+              ))}
+            </TextField>
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
             <TextField
@@ -285,6 +316,16 @@ export default function ScenarioBuilder() {
               InputLabelProps={{ shrink: true }}
               value={config.shockDate}
               onChange={e => setConfig({ ...config, shockDate: e.target.value })}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <TextField
+              label="Base Date"
+              type="date"
+              fullWidth
+              InputLabelProps={{ shrink: true }}
+              value={config.baseDate}
+              onChange={e => setConfig({ ...config, baseDate: e.target.value })}
             />
           </Grid>
         </Grid>

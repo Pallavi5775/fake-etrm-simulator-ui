@@ -13,7 +13,7 @@ import LoadingSpinner from "./shared/LoadingSpinner";
 import Toast from "./shared/Toast";
 import TradeLifecycleActions from "./TradeLifecycleActions";
 
-const BASE_URL = "http://localhost:8080/api/trades";
+const BASE_URL = "https://fake-etrm-simulator.onrender.com/api/trades";
 
 const STATUS_OPTIONS = ["PENDING_APPROVAL", "APPROVED", "REJECTED", "CANCELLED", "SETTLED"];
 const BUY_SELL_OPTIONS = ["BUY", "SELL"];
@@ -84,7 +84,7 @@ export default function TradeSearch() {
     } catch (err) {
       console.error("Error fetching trades:", err);
       const errorMsg = err.message === "Failed to fetch" 
-        ? "Cannot connect to backend. Please ensure the server is running at http://localhost:8080"
+        ? "Cannot connect to backend. Please ensure the server is running at https://fake-etrm-simulator.onrender.com"
         : `Network error: ${err.message}`;
       setError(errorMsg);
       setToast({

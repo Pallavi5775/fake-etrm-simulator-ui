@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box, Typography, Paper, Stack, Button, Grid, Card, CardContent,
   TextField, MenuItem, Chip
@@ -8,8 +8,9 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import LoadingSpinner from "../../components/shared/LoadingSpinner";
 import Toast from "../../components/shared/Toast";
 import DataTable from "../../components/shared/DataTable";
+import { getPortfolios } from '../../api/portfolioApi';
 
-const BASE_URL = "http://localhost:8080/api";
+const BASE_URL = "https://fake-etrm-simulator.onrender.com/api";
 
 const CONFIDENCE_LEVELS = [90, 95, 99];
 const HORIZONS = [1, 5, 10];
@@ -27,6 +28,12 @@ export default function VarDashboard() {
     method: "HISTORICAL"
   });
   const [toast, setToast] = useState({ open: false, message: "", severity: "info" });
+
+  // Fetch portfolios for dropdown
+  const [portfolios, setPortfolios] = useState([]);
+  useEffect(() => {
+    getPortfolios().then(res => setPortfolios(res.data || []));
+  }, []);
 
   const handleCalculateVaR = async () => {
     setLoading(true);
@@ -87,12 +94,17 @@ export default function VarDashboard() {
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6} md={3}>
             <TextField
+              select
               label="Portfolio"
               fullWidth
               value={config.portfolio}
               onChange={e => setConfig({ ...config, portfolio: e.target.value })}
               placeholder="e.g., CRUDE_FO"
-            />
+            >
+              {portfolios.map(p => (
+                <MenuItem key={p.id} value={p.name}>{p.name}</MenuItem>
+              ))}
+            </TextField>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <TextField

@@ -40,7 +40,7 @@ export default function CounterPartiesConfig() {
   const loadCounterparties = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8080/api/counterparties");
+      const res = await fetch("https://fake-etrm-simulator.onrender.com/api/counterparties");
       if (res.ok) {
         const data = await res.json();
         setCounterparties(Array.isArray(data) ? data : []);
@@ -52,7 +52,7 @@ export default function CounterPartiesConfig() {
     } catch (err) {
       console.error("Failed to load counterparties:", err);
       setCounterparties([]);
-      alert("Cannot connect to backend. Please ensure the server is running at http://localhost:8080");
+      alert("Cannot connect to backend. Please ensure the server is running at https://fake-etrm-simulator.onrender.com");
     } finally {
       setLoading(false);
     }
@@ -82,7 +82,7 @@ export default function CounterPartiesConfig() {
       
       if (editingId) {
         // Update existing
-        const res = await fetch(`http://localhost:8080/api/counterparties/${editingId}`, {
+        const res = await fetch(`https://fake-etrm-simulator.onrender.com/api/counterparties/${editingId}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -95,7 +95,7 @@ export default function CounterPartiesConfig() {
         if (!res.ok) throw new Error("Failed to update");
       } else {
         // Create new
-        const res = await fetch("http://localhost:8080/api/counterparties", {
+        const res = await fetch("https://fake-etrm-simulator.onrender.com/api/counterparties", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -126,7 +126,7 @@ export default function CounterPartiesConfig() {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       const token = localStorage.getItem("token");
       
-      const res = await fetch(`http://localhost:8080/api/counterparties/${id}`, {
+      const res = await fetch(`https://fake-etrm-simulator.onrender.com/api/counterparties/${id}`, {
         method: "DELETE",
         headers: {
           "X-User-Name": user.username || "",

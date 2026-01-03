@@ -169,7 +169,7 @@ export default function TradeStatusOverview() {
                 />
 
                 {/* Rejection Summary */}
-                <Paper variant="outlined" sx={{ p: 2, backgroundColor: "#fff3e0" }}>
+                <Paper variant="outlined" sx={{ p: 2, backgroundColor: "#B388FF20" }}>
                   <Typography variant="subtitle2" sx={{ mb: 1 }}>
                     Rejection Reasons Summary
                   </Typography>

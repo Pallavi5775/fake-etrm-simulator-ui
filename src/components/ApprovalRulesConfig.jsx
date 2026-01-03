@@ -7,7 +7,7 @@ import {
 } from "@mui/material";
 import { Add as AddIcon, Delete as DeleteIcon, UploadFile as UploadFileIcon } from "@mui/icons-material";
 
-const BASE_URL = "http://localhost:8080/api/approval-rules";
+const BASE_URL = "https://fake-etrm-simulator.onrender.com/api/approval-rules";
 
 const TRIGGER_EVENTS = [
   { value: "TRADE_BOOK", label: "Trade Book" },

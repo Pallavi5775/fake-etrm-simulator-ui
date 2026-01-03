@@ -8,6 +8,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 // Existing components
 import AuthPage from "./pages/AuthPage";
 import TradeBooking from "./pages/fo/TradeBooking";
+import MultiLegTradeBooking from "./pages/fo/MultiLegTradeBooking";
 import TradeStatusOverview from "./pages/mo/TradeStatusOverview";
 import LifecycleMonitor from "./pages/mo/LifecycleMonitor";
 import ConfigDashboard from "./pages/config/ConfigDashboard";
@@ -15,15 +16,21 @@ import CounterPartiesConfig from "./pages/config/CounterPartiesConfig";
 import InstrumentConfig from "./pages/config/InstrumentConfig";
 import PortfolioConfig from "./pages/config/PortfolioConfig";
 import ForwardCurvesConfig from "./pages/config/ForwardCurvesConfig";
+import YieldCurveConfig from "./pages/config/YieldCurveConfig";
+import GenerationForecastConfig from "./pages/config/GenerationForecastConfig";
+import PriceCurvesConfig from "./pages/config/PriceCurvesConfig";
+import WeatherDataConfig from "./pages/config/WeatherDataConfig";
 import DealTemplateConfig from "./components/DealTemplateConfig";
 import LifecycleRulesConfig from "./components/LifecycleRulesConfig";
 import ApprovalRulesConfig from "./components/ApprovalRulesConfig";
+import CreditLimitConfig from "./pages/config/CreditLimitConfig";
+import CommoditiesConfig from "./pages/config/CommoditiesConfig";
 
 // NEW: Risk Management Components
 import ApprovalDashboard from "./pages/risk/ApprovalDashboard";
 import ApprovalDetail from "./pages/risk/ApprovalDetail";
 import PositionDashboard from "./pages/risk/PositionDashboard";
-import LimitDashboard from "./pages/risk/LimitDashboard";
+import RiskLimitConfig from "./pages/config/RiskLimitConfig";
 import BreachAlert from "./pages/risk/BreachAlert";
 import VarDashboard from "./pages/risk/VarDashboard";
 
@@ -64,6 +71,7 @@ function App() {
                   <Routes>
                   {/* Front Office */}
                   <Route path="/fo/trade-booking" element={<TradeBooking />} />
+                  <Route path="/fo/multi-leg-booking" element={<MultiLegTradeBooking />} />
                   <Route path="/fo/trade-booking/amend/:tradeId" element={<TradeBooking />} />
                   <Route path="/trades/search" element={<TradeSearch />} />
                   <Route path="/trade/:tradeId" element={<TradeDetail />} />
@@ -73,7 +81,7 @@ function App() {
                   <Route path="/risk/approvals" element={<ApprovalDashboard />} />
                   <Route path="/risk/approval/:approvalId" element={<ApprovalDetail />} />
                   <Route path="/risk/positions" element={<PositionDashboard />} />
-                  <Route path="/risk/limits" element={<LimitDashboard />} />
+                  <Route path="/risk/limits" element={<RiskLimitConfig />} />
                   <Route path="/risk/breaches" element={<BreachAlert />} />
                   <Route path="/risk/var" element={<VarDashboard />} />
 
@@ -93,7 +101,14 @@ function App() {
                   <Route path="/config/templates" element={<DealTemplateConfig />} />
                   <Route path="/config/lifecycle" element={<LifecycleRulesConfig />} />
                   <Route path="/config/approvals" element={<ApprovalRulesConfig />} />
+                  <Route path="/config/credit-limits" element={<CreditLimitConfig />} />
+
                   <Route path="/config/forward-curves" element={<ForwardCurvesConfig />} />
+                  <Route path="/config/yield-curves" element={<YieldCurveConfig />} />
+                  <Route path="/config/generation-forecasts" element={<GenerationForecastConfig />} />
+                  <Route path="/config/price-curves" element={<PriceCurvesConfig />} />
+                  <Route path="/config/weather-data" element={<WeatherDataConfig />} />
+                  <Route path="/config/commodities" element={<CommoditiesConfig />} />
 
                   {/* Default */}
                   <Route path="/" element={<Navigate to="/risk/approvals" />} />

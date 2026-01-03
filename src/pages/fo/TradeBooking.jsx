@@ -48,7 +48,7 @@ export default function TradeBooking() {
       });
     
     // Fetch counterparties
-    fetch("http://localhost:8080/api/counterparties")
+    fetch("https://fake-etrm-simulator.onrender.com/api/counterparties")
       .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
@@ -61,7 +61,7 @@ export default function TradeBooking() {
       });
     
     // Fetch portfolios
-    fetch("http://localhost:8080/api/portfolios")
+    fetch("https://fake-etrm-simulator.onrender.com/api/portfolios")
       .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getPortfolios } from "../../api/portfolioApi";
 import {
   Box, Typography, Paper, Stack, Button, Grid, Card, CardContent,
   TextField, MenuItem, Chip, IconButton, Tooltip
@@ -12,7 +13,7 @@ import LoadingSpinner from "../../components/shared/LoadingSpinner";
 import Toast from "../../components/shared/Toast";
 import DataTable from "../../components/shared/DataTable";
 
-const BASE_URL = "http://localhost:8080/api";
+const BASE_URL = "https://fake-etrm-simulator.onrender.com/api";
 
 /**
  * Portfolio Position Dashboard - Real-time position aggregates with drill-down
@@ -32,9 +33,22 @@ export default function PositionDashboard() {
   
   const [filters, setFilters] = useState({
     date: new Date().toISOString().split("T")[0],
-    portfolio: "",
-    commodity: ""
+    portfolio: ""
   });
+  const [portfolios, setPortfolios] = useState([]);
+
+  useEffect(() => {
+    fetchPortfolios();
+  }, []);
+
+  const fetchPortfolios = async () => {
+    try {
+      const res = await getPortfolios();
+      setPortfolios(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      setPortfolios([]);
+    }
+  };
 
   useEffect(() => {
     if (filters.date) {
@@ -52,7 +66,6 @@ export default function PositionDashboard() {
 
       const params = new URLSearchParams();
       if (filters.portfolio) params.append("portfolio", filters.portfolio);
-      if (filters.commodity) params.append("commodity", filters.commodity);
 
       const url = filters.portfolio
         ? `${BASE_URL}/risk/positions/${filters.date}/portfolio/${filters.portfolio}`
@@ -92,7 +105,7 @@ export default function PositionDashboard() {
     } catch (err) {
       console.error("Error fetching positions:", err);
       const errorMsg = err.message === "Failed to fetch" 
-        ? "Cannot connect to backend at http://localhost:8080"
+        ? "Cannot connect to backend at https://fake-etrm-simulator.onrender.com"
         : "Network error: " + err.message;
       setError(errorMsg);
       setToast({
@@ -106,18 +119,11 @@ export default function PositionDashboard() {
   };
 
   const calculateSummary = (data) => {
-    const totalLong = data
-      .filter(p => p.netPosition > 0)
-      .reduce((sum, p) => sum + p.netPosition, 0);
-    
-    const totalShort = data
-      .filter(p => p.netPosition < 0)
-      .reduce((sum, p) => sum + Math.abs(p.netPosition), 0);
-    
-    const netPosition = data.reduce((sum, p) => sum + p.netPosition, 0);
-    
+    // Use backend field names: longQuantity, shortQuantity, netQuantity
+    const totalLong = data.reduce((sum, p) => sum + (p.longQuantity ?? 0), 0);
+    const totalShort = data.reduce((sum, p) => sum + (p.shortQuantity ?? 0), 0);
+    const netPosition = data.reduce((sum, p) => sum + (p.netQuantity ?? 0), 0);
     const portfolioCount = new Set(data?.map(p => p.portfolio)).size;
-
     setSummary({ totalLong, totalShort, netPosition, portfolioCount });
   };
 
@@ -340,24 +346,50 @@ export default function PositionDashboard() {
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
             <TextField
+              select
               label="Portfolio"
               fullWidth
               value={filters.portfolio}
               onChange={e => setFilters({ ...filters, portfolio: e.target.value })}
-              placeholder="e.g., CRUDE_FO"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <TextField
-              label="Commodity"
-              fullWidth
-              value={filters.commodity}
-              onChange={e => setFilters({ ...filters, commodity: e.target.value })}
-              placeholder="e.g., CRUDE_OIL"
-            />
+              placeholder="Select portfolio"
+            >
+              <MenuItem value="">All Portfolios</MenuItem>
+              {portfolios.map((p) => (
+                <MenuItem key={p.code || p.id || p} value={p.code || p.id || p}>
+                  {p.name || p.code || p}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
         </Grid>
       </Paper>
+
+
+      {/* Pretty Position Summary Card (if exactly one position) */}
+      {!loading && positions.length === 1 && (
+        <Card sx={{ mb: 3, background: 'linear-gradient(90deg, #a18cd1 0%, #fbc2eb 100%)', boxShadow: 2 }}>
+          <CardContent>
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              Position Summary for <b>{positions[0].portfolio}</b>
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6} md={3}><b>Commodity:</b> {positions[0].commodity}</Grid>
+              <Grid item xs={12} sm={6} md={3}><b>Delivery:</b> {positions[0].deliveryStart} to {positions[0].deliveryEnd}</Grid>
+              <Grid item xs={12} sm={6} md={3}><b>Long Qty:</b> {positions[0].longQuantity.toLocaleString()}</Grid>
+              <Grid item xs={12} sm={6} md={3}><b>Short Qty:</b> {positions[0].shortQuantity.toLocaleString()}</Grid>
+              <Grid item xs={12} sm={6} md={3}><b>Net Qty:</b> <span style={{color: positions[0].netQuantity >= 0 ? '#388e3c' : '#d32f2f', fontWeight: 'bold'}}>{positions[0].netQuantity.toLocaleString()}</span></Grid>
+              <Grid item xs={12} sm={6} md={3}><b>Long MTM:</b> {positions[0].longMtm}</Grid>
+              <Grid item xs={12} sm={6} md={3}><b>Short MTM:</b> {positions[0].shortMtm}</Grid>
+              <Grid item xs={12} sm={6} md={3}><b>Net MTM:</b> {positions[0].netMtm}</Grid>
+              <Grid item xs={12} sm={6} md={3}><b>Delta:</b> {positions[0].delta}</Grid>
+              <Grid item xs={12} sm={6} md={3}><b>Gamma:</b> {positions[0].gamma}</Grid>
+              <Grid item xs={12} sm={6} md={3}><b>Vega:</b> {positions[0].vega}</Grid>
+              <Grid item xs={12} sm={6} md={3}><b>Trade Count:</b> {positions[0].tradeCount}</Grid>
+              <Grid item xs={12} sm={6} md={3}><b>Last Updated:</b> {positions[0].lastUpdated ? new Date(positions[0].lastUpdated).toLocaleString() : '-'}</Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Positions Table */}
       {loading ? (

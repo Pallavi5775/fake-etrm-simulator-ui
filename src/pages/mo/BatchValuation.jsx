@@ -1,23 +1,26 @@
-import { useState, useEffect } from "react";
-import {
-  Box, Typography, Paper, Stack, Button, Grid, Card, CardContent,
-  TextField, Chip
-} from "@mui/material";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
-import RefreshIcon from "@mui/icons-material/Refresh";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import ErrorIcon from "@mui/icons-material/Error";
-import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
-import LoadingSpinner from "../../components/shared/LoadingSpinner";
-import Toast from "../../components/shared/Toast";
-import DataTable from "../../components/shared/DataTable";
 
-const BASE_URL = "http://localhost:8080/api";
+  import { useState, useEffect } from "react";
+  import {
+    Box, Typography, Paper, Stack, Button, Grid, Card, CardContent,
+    TextField, Chip, MenuItem
+  } from "@mui/material";
+  import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+  import RefreshIcon from "@mui/icons-material/Refresh";
+  import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+  import ErrorIcon from "@mui/icons-material/Error";
+  import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
+  import LoadingSpinner from "../../components/shared/LoadingSpinner";
+  import Toast from "../../components/shared/Toast";
+  import DataTable from "../../components/shared/DataTable";
+  import { getPortfolios } from '../../api/portfolioApi';
+
+  const BASE_URL = "https://fake-etrm-simulator.onrender.com/api";
 
 /**
  * Batch Valuation Management - Trigger and monitor EOD valuation runs
  */
 export default function BatchValuation() {
+
   const [loading, setLoading] = useState(false);
   const [runs, setRuns] = useState([]);
   const [config, setConfig] = useState({
@@ -25,11 +28,16 @@ export default function BatchValuation() {
     portfolioFilter: ""
   });
   const [toast, setToast] = useState({ open: false, message: "", severity: "info" });
+  const [portfolios, setPortfolios] = useState([]);
 
   useEffect(() => {
     fetchRuns();
     const interval = setInterval(fetchRuns, 10000); // Refresh every 10s
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    getPortfolios().then(res => setPortfolios(res.data || []));
   }, []);
 
   const fetchRuns = async () => {
@@ -71,7 +79,7 @@ export default function BatchValuation() {
         },
         body: JSON.stringify({
           ...config,
-          portfolioFilter: config.portfolioFilter || null
+          portfolioFilter: config.portfolioFilter || ""
         })
       });
 
@@ -123,6 +131,11 @@ export default function BatchValuation() {
       render: (val) => <Typography fontWeight="bold">{val}</Typography>
     },
     {
+      field: "runName",
+      label: "Run Name",
+      sortable: true
+    },
+    {
       field: "status",
       label: "Status",
       sortable: true,
@@ -149,7 +162,11 @@ export default function BatchValuation() {
       field: "portfolioFilter",
       label: "Portfolio",
       sortable: true,
-      render: (val) => val || "All"
+      render: (val) => {
+        if (!val) return "All";
+        const match = portfolios.find(p => p.name === val);
+        return match ? match.name : val;
+      }
     },
     {
       field: "totalTrades",
@@ -157,7 +174,7 @@ export default function BatchValuation() {
       sortable: true
     },
     {
-      field: "successCount",
+      field: "successfulCount",
       label: "Success",
       sortable: true,
       render: (val) => (
@@ -167,7 +184,7 @@ export default function BatchValuation() {
       )
     },
     {
-      field: "failureCount",
+      field: "failedCount",
       label: "Failed",
       sortable: true,
       render: (val) => (
@@ -177,16 +194,21 @@ export default function BatchValuation() {
       )
     },
     {
-      field: "durationMs",
-      label: "Duration",
+      field: "startedAt",
+      label: "Started At",
       sortable: true,
-      render: (val) => val ? `${(val / 1000).toFixed(2)}s` : "-"
+      render: (val) => val ? new Date(val).toLocaleString() : "-"
     },
     {
-      field: "startTime",
-      label: "Started",
+      field: "completedAt",
+      label: "Completed At",
       sortable: true,
-      render: (val) => new Date(val).toLocaleTimeString()
+      render: (val) => val ? new Date(val).toLocaleString() : "-"
+    },
+    {
+      field: "startedBy",
+      label: "Started By",
+      sortable: true
     }
   ];
 
@@ -205,32 +227,37 @@ export default function BatchValuation() {
         </Button>
       </Stack>
 
-      {/* Trigger Section */}
+      {/* Trigger Section & CSV Upload */}
       <Paper sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6" sx={{ mb: 2 }}>
           Start New Batch Run
         </Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={4}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid>
             <TextField
               label="Valuation Date"
               type="date"
               fullWidth
-              InputLabelProps={{ shrink: true }}
-              value={config.valuationDate}
+              value={config.valuationDate || ""}
               onChange={e => setConfig({ ...config, valuationDate: e.target.value })}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid>
             <TextField
+              select
               label="Portfolio Filter (optional)"
               fullWidth
-              value={config.portfolioFilter}
-              onChange={e => setConfig({ ...config, portfolioFilter: e.target.value })}
+              value={typeof config.portfolioFilter === 'string' ? config.portfolioFilter : ''}
+              onChange={e => setConfig({ ...config, portfolioFilter: e.target.value || '' })}
               placeholder="Leave empty for all portfolios"
-            />
+            >
+              <MenuItem value="">All</MenuItem>
+              {portfolios.map(p => (
+                <MenuItem key={String(p.id)} value={p.name}>{p.name}</MenuItem>
+              ))}
+            </TextField>
           </Grid>
-          <Grid item xs={12} sm={12} md={4}>
+          <Grid>
             <Button
               variant="contained"
               fullWidth

@@ -40,7 +40,7 @@ export default function PortfolioConfig() {
   const loadPortfolios = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8080/api/portfolios");
+      const res = await fetch("https://fake-etrm-simulator.onrender.com/api/portfolios");
       if (res.ok) {
         const data = await res.json();
         setPortfolios(Array.isArray(data) ? data : []);
@@ -77,7 +77,7 @@ export default function PortfolioConfig() {
       
       if (editingId) {
         // Update existing
-        const res = await fetch(`http://localhost:8080/api/portfolios/${editingId}`, {
+        const res = await fetch(`https://fake-etrm-simulator.onrender.com/api/portfolios/${editingId}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -90,7 +90,7 @@ export default function PortfolioConfig() {
         if (!res.ok) throw new Error("Failed to update");
       } else {
         // Create new
-        const res = await fetch("http://localhost:8080/api/portfolios", {
+        const res = await fetch("https://fake-etrm-simulator.onrender.com/api/portfolios", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -121,7 +121,7 @@ export default function PortfolioConfig() {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       const token = localStorage.getItem("token");
       
-      const res = await fetch(`http://localhost:8080/api/portfolios/${id}`, {
+      const res = await fetch(`https://fake-etrm-simulator.onrender.com/api/portfolios/${id}`, {
         method: "DELETE",
         headers: {
           "X-User-Name": user.username || "",
@@ -376,6 +376,7 @@ export default function PortfolioConfig() {
           >
             Save
           </Button>
+          <Button onClick={handleCloseDialog} variant="outlined" color="primary">OK</Button>
         </Stack>
       </Dialog>
     </Box>

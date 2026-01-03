@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { getCommodities } from '../api/commoditiesApi';
+import httpClient from '../api/httpClient';
 import {
   Box, Typography, Table, TableHead, TableRow, TableCell,
   TableBody, Switch, Chip, Paper, Button, Dialog, TextField,
@@ -7,8 +9,8 @@ import {
 } from "@mui/material";
 import { Add as AddIcon, UploadFile as UploadFileIcon } from "@mui/icons-material";
 
-const BASE_URL = "http://localhost:8080/api/templates";
-const INSTRUMENTS_URL = "http://localhost:8080/api/instruments";
+const BASE_URL = "https://fake-etrm-simulator.onrender.com/api/templates";
+const INSTRUMENTS_URL = "https://fake-etrm-simulator.onrender.com/api/instruments";
 
 export default function DealTemplateList() {
   const [templates, setTemplates] = useState([]);
@@ -16,14 +18,32 @@ export default function DealTemplateList() {
   const [openDialog, setOpenDialog] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [commodities, setCommodities] = useState([]);
+  const [metadata, setMetadata] = useState({
+    currencies: [],
+    pricingModels: [],
+    units: [],
+    instrumentTypes: []
+  });
   const [formData, setFormData] = useState({
     templateName: "",
     instrumentId: "",
     defaultQuantity: "",
     defaultPrice: "",
     autoApprovalAllowed: false,
-    mtmApprovalThreshold: ""
+    mtmApprovalThreshold: "",
+    commodity: "",
+    currency: "USD",
+    pricingModel: "MARK_TO_MARKET",
+    unit: "BBL",
+    instrumentType: "FUTURE"
   });
+
+  // Metadata-driven lists
+  const currencyOptions = metadata.currency || [];
+  const pricingModelOptions = metadata.pricingModel || [];
+  const unitOptions = metadata.unit || [];
+  const instrumentTypeOptions = metadata.instrumentType || [];
   
   // CSV Upload
   const [uploadDialog, setUploadDialog] = useState(false);
@@ -34,6 +54,11 @@ export default function DealTemplateList() {
   useEffect(() => {
     fetchTemplates();
     loadInstruments();
+    getCommodities().then(res => setCommodities(res.data || []));
+    // Fetch deal template metadata
+    httpClient.get('/reference-data/deal-template-metadata').then(res => {
+      setMetadata(res.data || {});
+    });
   }, []);
 
   const fetchTemplates = async () => {
@@ -94,7 +119,12 @@ export default function DealTemplateList() {
       defaultQuantity: "",
       defaultPrice: "",
       autoApprovalAllowed: false,
-      mtmApprovalThreshold: ""
+      mtmApprovalThreshold: "",
+      commodity: "",
+      currency: currencyOptions[0] || "",
+      pricingModel: pricingModelOptions[0] || "",
+      unit: unitOptions[0] || "",
+      instrumentType: instrumentTypeOptions[0] || ""
     });
     setError(null);
     setOpenDialog(true);
@@ -156,8 +186,8 @@ export default function DealTemplateList() {
   const handleCreateTemplate = async () => {
     setError(null);
 
-    if (!formData.templateName || !formData.instrumentId || !formData.defaultPrice) {
-      setError("Template name, instrument, and price are required");
+    if (!formData.templateName || !formData.instrumentId || !formData.defaultPrice || !formData.commodity || !formData.currency || !formData.pricingModel || !formData.unit || !formData.instrumentType) {
+      setError("All fields are required");
       return;
     }
 
@@ -173,6 +203,11 @@ export default function DealTemplateList() {
         defaultPrice: parseFloat(formData.defaultPrice),
         autoApprovalAllowed: formData.autoApprovalAllowed,
         mtmApprovalThreshold: formData.mtmApprovalThreshold ? parseFloat(formData.mtmApprovalThreshold) : null,
+        commodity: formData.commodity,
+        currency: formData.currency,
+        pricingModel: formData.pricingModel,
+        unit: formData.unit,
+        instrumentType: formData.instrumentType,
         createdByUser: user.username || "UNKNOWN"
       };
 
@@ -284,6 +319,66 @@ export default function DealTemplateList() {
           )}
 
           <Stack spacing={2.5}>
+                        <FormControl fullWidth required size="small">
+                          <InputLabel>Commodity</InputLabel>
+                          <Select
+                            value={formData.commodity}
+                            onChange={e => setFormData({ ...formData, commodity: e.target.value })}
+                            label="Commodity"
+                          >
+                            {commodities.map(c => (
+                              <MenuItem key={c.id} value={c.name}>{c.name}</MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                        <FormControl fullWidth required size="small">
+                          <InputLabel>Currency</InputLabel>
+                          <Select
+                            value={formData.currency}
+                            onChange={e => setFormData({ ...formData, currency: e.target.value })}
+                            label="Currency"
+                          >
+                            {currencyOptions.map(cur => (
+                              <MenuItem key={cur} value={cur}>{cur}</MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                        <FormControl fullWidth required size="small">
+                          <InputLabel>Pricing Model</InputLabel>
+                          <Select
+                            value={formData.pricingModel}
+                            onChange={e => setFormData({ ...formData, pricingModel: e.target.value })}
+                            label="Pricing Model"
+                          >
+                            {pricingModelOptions.map(pm => (
+                              <MenuItem key={pm} value={pm}>{pm}</MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                        <FormControl fullWidth required size="small">
+                          <InputLabel>Unit</InputLabel>
+                          <Select
+                            value={formData.unit}
+                            onChange={e => setFormData({ ...formData, unit: e.target.value })}
+                            label="Unit"
+                          >
+                            {unitOptions.map(u => (
+                              <MenuItem key={u} value={u}>{u}</MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                        <FormControl fullWidth required size="small">
+                          <InputLabel>Instrument Type</InputLabel>
+                          <Select
+                            value={formData.instrumentType}
+                            onChange={e => setFormData({ ...formData, instrumentType: e.target.value })}
+                            label="Instrument Type"
+                          >
+                            {instrumentTypeOptions.map(it => (
+                              <MenuItem key={it} value={it}>{it}</MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
             <TextField
               label="Template Name"
               placeholder="e.g., Standard Power Forward"

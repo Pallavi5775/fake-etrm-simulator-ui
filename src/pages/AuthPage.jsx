@@ -5,7 +5,7 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
-const BASE_URL = "http://localhost:8080/api/auth";
+const BASE_URL = "https://fake-etrm-simulator.onrender.com/api/auth";
 
 export default function AuthPage() {
   const navigate = useNavigate();

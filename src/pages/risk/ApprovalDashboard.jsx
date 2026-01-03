@@ -12,7 +12,7 @@ import DataTable from "../../components/shared/DataTable";
 import LoadingSpinner from "../../components/shared/LoadingSpinner";
 import Toast from "../../components/shared/Toast";
 
-const BASE_URL = "http://localhost:8080/api";
+const BASE_URL = "https://fake-etrm-simulator.onrender.com/api";
 
 const FILTER_OPTIONS = {
   approvalRole: ["TRADER", "RISK_MANAGER", "OPERATIONS", "SENIOR_TRADER"]

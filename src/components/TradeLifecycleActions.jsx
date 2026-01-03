@@ -10,7 +10,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import HistoryIcon from "@mui/icons-material/History";
 import Toast from "./shared/Toast";
 
-const BASE_URL = "http://localhost:8080/api";
+const BASE_URL = "https://fake-etrm-simulator.onrender.com/api";
 
 /**
  * Trade Lifecycle Actions Component
@@ -160,9 +160,9 @@ export default function TradeLifecycleActions({ trade, onActionComplete }) {
     setLoading(true);
     try {
       const res = await fetch(`${BASE_URL}/trades/${trade.tradeId}/events`, {
+        method: "GET",
         headers: getAuthHeaders()
       });
-
       if (res.ok) {
         const data = await res.json();
         setEvents(Array.isArray(data) ? data : []);
@@ -396,7 +396,7 @@ export default function TradeLifecycleActions({ trade, onActionComplete }) {
                     </Typography>
                   </Stack>
                   <Typography variant="body2">
-                    <strong>{event.performedBy || "System"}</strong>
+                    <strong>{event.triggeredBy || event.performedBy || "System"}</strong>
                   </Typography>
                   {event.description && (
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>

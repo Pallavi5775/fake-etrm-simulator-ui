@@ -14,7 +14,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import LoadingSpinner from "./shared/LoadingSpinner";
 import Toast from "./shared/Toast";
 
-const BASE_URL = "http://localhost:8080/api";
+const BASE_URL = "https://fake-etrm-simulator.onrender.com/api";
 
 /**
  * Trade History - Shows all versions of a trade with visual diff viewer
