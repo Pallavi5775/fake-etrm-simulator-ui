@@ -1,9 +1,11 @@
 
 import { useState, useEffect } from "react";
-import { Box, Typography, Paper, Button, Stack, Table, TableHead, TableRow, TableCell, TableBody, Dialog, CircularProgress, Alert } from "@mui/material";
+import { Box, Typography, Paper, Button, Stack, Table, TableHead, TableRow, TableCell, TableBody, Dialog, CircularProgress, Alert, useMediaQuery, useTheme } from "@mui/material";
 import httpClient from "../../api/httpClient";
 
 export default function WeatherDataConfig() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [weatherSets, setWeatherSets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploadDialog, setUploadDialog] = useState(false);
@@ -65,52 +67,52 @@ export default function WeatherDataConfig() {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" sx={{ mb: 3 }}>
+    <Box sx={{ p: isMobile ? 1 : 3 }}>
+      <Typography variant={isMobile ? "h5" : "h4"} sx={{ mb: 3 }}>
         Weather Data
       </Typography>
       <Paper sx={{ p: 2, mb: 2 }}>
         <Typography variant="body1">
-          Configure and upload weather data for RENEWABLE_FORECAST and other models.
+          Upload and manage renewable energy forecast data (solar, wind, etc.) for forecasting models.
         </Typography>
         <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
           <Button variant="contained" onClick={() => setUploadDialog(true)}>
-            Upload Weather Data (CSV)
+            Upload Forecast Data (CSV)
           </Button>
         </Stack>
       </Paper>
       {loading ? (
         <CircularProgress />
       ) : (
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Location</TableCell>
-              <TableCell>Date</TableCell>
-              <TableCell>Type</TableCell>
-              <TableCell>Value</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {weatherSets.map((w) => (
-              <TableRow key={w.id}>
-                <TableCell>{w.location}</TableCell>
-                <TableCell>{w.date}</TableCell>
-                <TableCell>{w.type}</TableCell>
-                <TableCell>{w.value}</TableCell>
-                <TableCell>
-                  <Button color="error" onClick={() => handleDelete(w.id)} size="small">Delete</Button>
-                </TableCell>
+        <Box sx={{ overflowX: 'auto' }}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Plant Name</TableCell>
+                <TableCell>Date</TableCell>
+                <TableCell align="right">Forecast (MWh)</TableCell>
+                <TableCell align="right">Actions</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHead>
+            <TableBody>
+              {weatherSets.map((w) => (
+                <TableRow key={w.id}>
+                  <TableCell>{w.plantName}</TableCell>
+                  <TableCell>{new Date(w.date).toLocaleDateString()}</TableCell>
+                  <TableCell align="right">{w.forecastMWh?.toLocaleString()}</TableCell>
+                  <TableCell align="right">
+                    <Button color="error" onClick={() => handleDelete(w.id)} size="small">Delete</Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Box>
       )}
 
-      <Dialog open={uploadDialog} onClose={() => setUploadDialog(false)} maxWidth="sm" fullWidth>
-        <Box sx={{ p: 3 }}>
-          <Typography variant="h6">Upload Weather Data CSV</Typography>
+      <Dialog open={uploadDialog} onClose={() => setUploadDialog(false)} maxWidth="sm" fullWidth fullScreen={isMobile}>
+        <Box sx={{ p: isMobile ? 2 : 3 }}>
+          <Typography variant="h6">Upload Forecast Data CSV</Typography>
           {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
           <input type="file" accept=".csv" onChange={handleFileSelect} style={{ marginTop: 16 }} />
           <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
