@@ -378,6 +378,8 @@ export default function TradeTable({
             </TableBody>
           </Table>
         </Box>
+      )}
+
       {/* Drill-down only */}
       <TradeDrilldownModal
         trade={selectedTrade}
