@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import apiConfig from '../config/apiConfig';
 import {
   Box, Typography, Paper, Stack, Button, TextField, MenuItem,
-  Grid, Chip, IconButton, Card, CardContent, Divider, Tooltip
+  Grid, Chip, IconButton, Card, CardContent, Divider, Tooltip, useMediaQuery, useTheme
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -24,6 +24,8 @@ const BUY_SELL_OPTIONS = ["BUY", "SELL"];
  */
 export default function TradeSearch() {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [loading, setLoading] = useState(false);
   const [allTrades, setAllTrades] = useState([]);
   const [error, setError] = useState(null);
@@ -262,13 +264,13 @@ export default function TradeSearch() {
   };
 
   return (
-    <Box sx={{ p: 3, minHeight: '100vh', display: 'flex', flexDirection: 'column', width: '100%' }}>
-      <Typography variant="h4" sx={{ mb: 3 }}>
+    <Box sx={{ p: isMobile ? 1 : 3, minHeight: '100vh', display: 'flex', flexDirection: 'column', width: '100%' }}>
+      <Typography variant={isMobile ? "h5" : "h4"} sx={{ mb: 3 }}>
         🔍 Trade Search
       </Typography>
 
       {/* Search Filters */}
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper sx={{ p: isMobile ? 2 : 3, mb: 3 }}>
         <Typography variant="h6" sx={{ mb: 2 }}>
           Search Criteria
         </Typography>
@@ -461,11 +463,12 @@ export default function TradeSearch() {
         </Grid>
 
         {/* Action Buttons */}
-        <Stack direction="row" spacing={2} sx={{ mt: 3 }} justifyContent="flex-end">
+        <Stack direction={isMobile ? "column" : "row"} spacing={2} sx={{ mt: 3 }} justifyContent="flex-end">
           <Button
             variant="outlined"
             startIcon={<ClearIcon />}
             onClick={handleClearFilters}
+            fullWidth={isMobile}
           >
             Clear
           </Button>
@@ -474,6 +477,7 @@ export default function TradeSearch() {
             startIcon={<SearchIcon />}
             onClick={handleSearch}
             disabled={loading}
+            fullWidth={isMobile}
           >
             Search
           </Button>
@@ -503,12 +507,12 @@ export default function TradeSearch() {
                   borderColor: 'divider',
                   '&:hover': { boxShadow: 3, cursor: 'pointer' },
                   mb: 3,
-                  p: 1,
+                  p: isMobile ? 1 : 1,
                   width: '100%'
                 }}
               >
-                <CardContent sx={{ width: '100%' }}>
-                  <Grid container spacing={3}>
+                <CardContent sx={{ width: '100%', p: isMobile ? 2 : 3 }}>
+                  <Grid container spacing={isMobile ? 2 : 3}>
                     {/* Header Row */}
                     <Grid item xs={12}>
                       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ width: '100%' }}>
