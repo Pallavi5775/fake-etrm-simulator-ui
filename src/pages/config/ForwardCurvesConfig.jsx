@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
   Box, Typography, Paper, Stack, Button, TextField, MenuItem,
   Dialog, DialogTitle, DialogContent, DialogActions, IconButton,
-  Alert, Chip, Grid, Tabs, Tab
+  Alert, Chip, Grid, Tabs, Tab, useMediaQuery, useTheme, Card, CardContent
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -20,6 +20,9 @@ const BASE_URL = apiConfig.baseURL;
  * Forward Curves Configuration - Manage forward curve points for pricing
  */
 export default function ForwardCurvesConfig() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isVerySmall = useMediaQuery(theme.breakpoints.down('sm'));
   const [loading, setLoading] = useState(true);
   const [curves, setCurves] = useState([]);
   const [instruments, setInstruments] = useState([]);
@@ -381,12 +384,12 @@ export default function ForwardCurvesConfig() {
   ];
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-        <Typography variant="h4">
+    <Box sx={{ p: isMobile ? 1 : 3 }}>
+      <Stack direction={isMobile ? "column" : "row"} justifyContent="space-between" alignItems="center" sx={{ mb: 3, gap: isMobile ? 2 : 0 }}>
+        <Typography variant={isMobile ? "h5" : "h4"}>
           📈 Forward Curves Configuration
         </Typography>
-        <Stack direction="row" spacing={2}>
+        <Stack direction={isMobile ? "column" : "row"} spacing={2} width={isMobile ? "100%" : "auto"}>
           <Button
             variant="outlined"
             startIcon={<RefreshIcon />}
@@ -394,6 +397,7 @@ export default function ForwardCurvesConfig() {
               fetchInstruments();
               if (selectedInstrument) fetchCurvesByInstrument(selectedInstrument);
             }}
+            fullWidth={isMobile}
           >
             Refresh
           </Button>
@@ -402,6 +406,7 @@ export default function ForwardCurvesConfig() {
             startIcon={<UploadIcon />}
             onClick={() => setOpenBulkDialog(true)}
             color="secondary"
+            fullWidth={isMobile}
           >
             Bulk Upload
           </Button>
@@ -409,6 +414,7 @@ export default function ForwardCurvesConfig() {
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => handleOpenDialog()}
+            fullWidth={isMobile}
           >
             Add Curve Point
           </Button>
@@ -433,7 +439,7 @@ export default function ForwardCurvesConfig() {
       {tabValue === 0 && (
         <>
           {/* Instrument Filter */}
-          <Paper sx={{ p: 2, mb: 3 }}>
+          <Paper sx={{ p: isMobile ? 2 : 2, mb: 3 }}>
             <Grid container spacing={2} alignItems="center">
               <Grid item xs={12} md={6}>
                 <TextField
@@ -465,15 +471,66 @@ export default function ForwardCurvesConfig() {
           {loading ? (
             <LoadingSpinner message="Loading forward curves..." />
           ) : selectedInstrument ? (
-            <DataTable
-              columns={columns}
-              rows={curves}
-              defaultSortBy="deliveryDate"
-              defaultSortDirection="asc"
-              pageSize={25}
-            />
+            isVerySmall ? (
+              // Mobile: Card layout
+              <Stack spacing={2}>
+                {curves.map((curve) => (
+                  <Card key={`${curve.instrumentCode}-${curve.deliveryDate}`} sx={{ backgroundColor: "#1B1F3B", border: "1px solid #252862" }}>
+                    <CardContent>
+                      <Grid container spacing={1}>
+                        <Grid item xs={6}>
+                          <Typography variant="caption" color="text.secondary">Instrument</Typography>
+                          <Typography sx={{ color: "#EDE7F6", fontFamily: "monospace", fontWeight: "bold" }}>{curve.instrumentCode}</Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="caption" color="text.secondary">Delivery Date</Typography>
+                          <Typography sx={{ color: "#EDE7F6" }}>{new Date(curve.deliveryDate).toLocaleDateString()}</Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="caption" color="text.secondary">Price</Typography>
+                          <Typography sx={{ color: "#EDE7F6", fontWeight: "bold" }}>${curve.price.toFixed(2)}</Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="caption" color="text.secondary">Last Updated</Typography>
+                          <Typography sx={{ color: "#EDE7F6" }}>{curve.lastUpdated ? new Date(curve.lastUpdated).toLocaleString() : "-"}</Typography>
+                        </Grid>
+                        <Grid item xs={12}>
+                          <Typography variant="caption" color="text.secondary">Actions</Typography>
+                          <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              onClick={() => handleOpenDialog(curve)}
+                              title="Edit"
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => handleDelete(curve.instrumentCode, curve.deliveryDate)}
+                              title="Delete"
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Stack>
+                        </Grid>
+                      </Grid>
+                    </CardContent>
+                  </Card>
+                ))}
+              </Stack>
+            ) : (
+              <DataTable
+                columns={columns}
+                rows={curves}
+                defaultSortBy="deliveryDate"
+                defaultSortDirection="asc"
+                pageSize={25}
+              />
+            )
           ) : (
-            <Paper sx={{ p: 4, textAlign: "center" }}>
+            <Paper sx={{ p: isMobile ? 2 : 4, textAlign: "center" }}>
               <Typography variant="h6" color="text.secondary">
                 Select an instrument to view forward curve points
               </Typography>
@@ -484,7 +541,7 @@ export default function ForwardCurvesConfig() {
 
       {/* Tab 1: Instruments List */}
       {tabValue === 1 && (
-        <Paper sx={{ p: 3 }}>
+        <Paper sx={{ p: isMobile ? 2 : 3 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
             Instruments with Forward Curves
           </Typography>
@@ -518,10 +575,10 @@ export default function ForwardCurvesConfig() {
       )}
 
       {/* Add/Edit Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth fullScreen={isMobile}>
         <DialogTitle>{editMode ? "Edit Curve Point" : "Add Curve Point"}</DialogTitle>
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
+          <Stack spacing={2} sx={{ mt: 1, p: isMobile ? 1 : 0 }}>
             <TextField
               label="Instrument Code"
               fullWidth
@@ -560,10 +617,10 @@ export default function ForwardCurvesConfig() {
       </Dialog>
 
       {/* Bulk Upload Dialog */}
-      <Dialog open={openBulkDialog} onClose={() => setOpenBulkDialog(false)} maxWidth="md" fullWidth>
+      <Dialog open={openBulkDialog} onClose={() => setOpenBulkDialog(false)} maxWidth="md" fullWidth fullScreen={isMobile}>
         <DialogTitle>Bulk Upload Forward Curves</DialogTitle>
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
+          <Stack spacing={2} sx={{ mt: 1, p: isMobile ? 1 : 0 }}>
             <TextField
               label="Instrument Code"
               fullWidth

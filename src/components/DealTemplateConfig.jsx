@@ -6,7 +6,7 @@ import {
   Box, Typography, Table, TableHead, TableRow, TableCell,
   TableBody, Switch, Chip, Paper, Button, Dialog, TextField,
   Stack, FormControl, InputLabel, Select, MenuItem,
-  FormControlLabel, Alert, CircularProgress
+  FormControlLabel, Alert, CircularProgress, useMediaQuery, useTheme, Card, CardContent, Grid
 } from "@mui/material";
 import { Add as AddIcon, UploadFile as UploadFileIcon } from "@mui/icons-material";
 
@@ -14,6 +14,9 @@ const BASE_URL = apiConfig.baseURL + "/templates";
 const INSTRUMENTS_URL = apiConfig.baseURL + "/instruments";
 
 export default function DealTemplateList() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isVerySmall = useMediaQuery(theme.breakpoints.down('sm'));
   const [templates, setTemplates] = useState([]);
   const [instruments, setInstruments] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
@@ -239,17 +242,18 @@ export default function DealTemplateList() {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h5">
+    <Box sx={{ p: isMobile ? 1 : 3 }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexDirection: isMobile ? "column" : "row", gap: isMobile ? 2 : 0 }}>
+        <Typography variant={isMobile ? "h6" : "h5"}>
           Deal Templates - Auto Approval Configuration
         </Typography>
-        <Stack direction="row" spacing={2}>
+        <Stack direction={isMobile ? "column" : "row"} spacing={2} width={isMobile ? "100%" : "auto"}>
           <Button
             variant="outlined"
             startIcon={<UploadFileIcon />}
             onClick={() => setUploadDialog(true)}
             sx={{ textTransform: "none" }}
+            fullWidth={isMobile}
           >
             Upload CSV
           </Button>
@@ -258,6 +262,7 @@ export default function DealTemplateList() {
             startIcon={<AddIcon />}
             onClick={handleOpenDialog}
             sx={{ textTransform: "none" }}
+            fullWidth={isMobile}
           >
             New Template
           </Button>
@@ -265,41 +270,87 @@ export default function DealTemplateList() {
       </Box>
 
       <Paper elevation={2}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ bgcolor: "grey.100" }}>
-              <TableCell><strong>Template Name</strong></TableCell>
-              <TableCell><strong>Commodity</strong></TableCell>
-              <TableCell><strong>Instrument</strong></TableCell>
-              <TableCell align="center"><strong>Auto-Approval</strong></TableCell>
-              <TableCell align="center"><strong>Toggle</strong></TableCell>
-            </TableRow>
-          </TableHead>
-
-          <TableBody>
+        {isVerySmall ? (
+          // Mobile: Card layout
+          <Stack spacing={2} sx={{ p: 2 }}>
             {templates?.map((template) => (
-              <TableRow key={template.id} hover>
-                <TableCell>{template.templateName}</TableCell>
-                <TableCell>
-                  <Chip size="small" label={template.commodity} color="primary" variant="outlined" />
-                </TableCell>
-                <TableCell>{template.instrumentCode}</TableCell>
-                <TableCell align="center">
-                  <Chip
-                    size="small"
-                    label={template.autoApprovalAllowed ? "Enabled" : "Disabled"}
-                    color={template.autoApprovalAllowed ? "success" : "error"} />
-                </TableCell>
-                <TableCell align="center">
-                  <Switch
-                    checked={template.autoApprovalAllowed}
-                    onChange={() => toggleAutoApproval(template.id, template.autoApprovalAllowed)}
-                    color="success" />
-                </TableCell>
-              </TableRow>
+              <Card key={template.id} sx={{ backgroundColor: "#1B1F3B", border: "1px solid #252862" }}>
+                <CardContent>
+                  <Grid container spacing={1}>
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle2" color="text.secondary">Template Name</Typography>
+                      <Typography sx={{ color: "#EDE7F6" }}>{template.templateName}</Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Commodity</Typography>
+                      <Chip size="small" label={template.commodity} color="primary" variant="outlined" />
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Instrument</Typography>
+                      <Typography sx={{ color: "#EDE7F6" }}>{template.instrumentCode}</Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Auto-Approval</Typography>
+                      <Chip
+                        size="small"
+                        label={template.autoApprovalAllowed ? "Enabled" : "Disabled"}
+                        color={template.autoApprovalAllowed ? "success" : "error"}
+                      />
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Toggle</Typography>
+                      <Switch
+                        checked={template.autoApprovalAllowed}
+                        onChange={() => toggleAutoApproval(template.id, template.autoApprovalAllowed)}
+                        color="success"
+                        size="small"
+                      />
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
             ))}
-          </TableBody>
-        </Table>
+          </Stack>
+        ) : (
+          // Tablet/Desktop: Table with horizontal scroll
+          <Box sx={{ overflowX: 'auto' }}>
+            <Table>
+              <TableHead>
+                <TableRow sx={{ bgcolor: "grey.100" }}>
+                  <TableCell><strong>Template Name</strong></TableCell>
+                  <TableCell><strong>Commodity</strong></TableCell>
+                  <TableCell><strong>Instrument</strong></TableCell>
+                  <TableCell align="center"><strong>Auto-Approval</strong></TableCell>
+                  <TableCell align="center"><strong>Toggle</strong></TableCell>
+                </TableRow>
+              </TableHead>
+
+              <TableBody>
+                {templates?.map((template) => (
+                  <TableRow key={template.id} hover>
+                    <TableCell>{template.templateName}</TableCell>
+                    <TableCell>
+                      <Chip size="small" label={template.commodity} color="primary" variant="outlined" />
+                    </TableCell>
+                    <TableCell>{template.instrumentCode}</TableCell>
+                    <TableCell align="center">
+                      <Chip
+                        size="small"
+                        label={template.autoApprovalAllowed ? "Enabled" : "Disabled"}
+                        color={template.autoApprovalAllowed ? "success" : "error"} />
+                    </TableCell>
+                    <TableCell align="center">
+                      <Switch
+                        checked={template.autoApprovalAllowed}
+                        onChange={() => toggleAutoApproval(template.id, template.autoApprovalAllowed)}
+                        color="success" />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Box>
+        )}
       </Paper>
 
       <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
@@ -307,8 +358,8 @@ export default function DealTemplateList() {
       </Typography>
 
       {/* Create Template Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <Box sx={{ p: 3 }}>
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth fullScreen={isMobile}>
+        <Box sx={{ p: isMobile ? 2 : 3 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
             Create New Deal Template
           </Typography>
@@ -475,14 +526,14 @@ export default function DealTemplateList() {
       </Dialog>
 
       {/* CSV Upload Dialog */}
-      <Dialog open={uploadDialog} onClose={() => setUploadDialog(false)} maxWidth="sm" fullWidth>
-        <Box sx={{ p: 3, borderBottom: "1px solid #ddd" }}>
+      <Dialog open={uploadDialog} onClose={() => setUploadDialog(false)} maxWidth="sm" fullWidth fullScreen={isMobile}>
+        <Box sx={{ p: isMobile ? 2 : 3, borderBottom: "1px solid #ddd" }}>
           <Typography variant="h6">
             Upload Deal Templates CSV
           </Typography>
         </Box>
 
-        <Stack spacing={2} sx={{ p: 3 }}>
+        <Stack spacing={2} sx={{ p: isMobile ? 2 : 3 }}>
           <Alert severity="info" sx={{ mb: 2 }}>
             <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
               CSV Format Required:
@@ -522,7 +573,7 @@ Gas Option Feb,GAS-FEB25-OPT,500,50.00,false,`}
           )}
         </Stack>
 
-        <Stack direction="row" spacing={2} sx={{ p: 3, borderTop: "1px solid #ddd" }}>
+        <Stack direction="row" spacing={2} sx={{ p: isMobile ? 2 : 3, borderTop: "1px solid #ddd" }}>
           <Button
             variant="outlined"
             onClick={() => {
