@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import apiConfig from '../config/apiConfig';
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Box, Typography, Paper, Stack, Button, Chip, Grid, Divider, Alert
@@ -8,7 +9,7 @@ import LoadingSpinner from "../components/shared/LoadingSpinner";
 import TradeLifecycleActions from "../components/TradeLifecycleActions";
 import ValuationChart from "../components/ValuationChart";
 
-const BASE_URL = "https://fake-etrm-simulator.onrender.com/api";
+const BASE_URL = apiConfig.baseURL;
 
 /**
  * Trade Detail Page - Full trade information with lifecycle actions

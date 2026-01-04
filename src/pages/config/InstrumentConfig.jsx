@@ -18,16 +18,24 @@ import {
   MenuItem,
   Select,
   FormControl,
-  InputLabel
+  InputLabel,
+  Card,
+  CardContent,
+  Grid,
+  useMediaQuery,
+  useTheme
 } from "@mui/material";
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, UploadFile as UploadFileIcon } from "@mui/icons-material";
 
-const API_BASE = "https://fake-etrm-simulator.onrender.com/api";
+import apiConfig from '../../config/apiConfig';
+const API_BASE = apiConfig.baseURL;
 
 /**
  * Instrument Configuration – Connected to Backend
  */
 export default function InstrumentConfig() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [instruments, setInstruments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -328,11 +336,11 @@ export default function InstrumentConfig() {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: isMobile ? 1 : 3 }}>
       {/* Header */}
       <Box sx={{ mb: 3 }}>
         <Typography
-          variant="h4"
+          variant={isMobile ? "h5" : "h4"}
           sx={{
             fontWeight: 600,
             mb: 1,
@@ -355,11 +363,11 @@ export default function InstrumentConfig() {
       )}
 
       {/* Toolbar */}
-      <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <Box sx={{ mb: 3, display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "stretch" : "center", gap: 2 }}>
         <Typography variant="h6" sx={{ color: "#EDE7F6" }}>
           Total Instruments: {instruments.length}
         </Typography>
-        <Stack direction="row" spacing={2}>
+        <Stack direction={isMobile ? "column" : "row"} spacing={2} sx={{ width: isMobile ? "100%" : "auto" }}>
           <Button
             variant="outlined"
             startIcon={<UploadFileIcon />}
@@ -372,8 +380,10 @@ export default function InstrumentConfig() {
               "&:hover": {
                 borderColor: "#B388FF",
                 backgroundColor: "#7C4DFF20"
-              }
+              },
+              minHeight: 48
             }}
+            fullWidth={isMobile}
           >
             Upload CSV
           </Button>
@@ -384,8 +394,10 @@ export default function InstrumentConfig() {
             sx={{
               background: "linear-gradient(135deg, #7C4DFF 0%, #B388FF 100%)",
               textTransform: "none",
-              fontWeight: 600
+              fontWeight: 600,
+              minHeight: 48
             }}
+            fullWidth={isMobile}
           >
             New Instrument
           </Button>
@@ -408,7 +420,59 @@ export default function InstrumentConfig() {
           <Box sx={{ p: 4 }}>
             <Alert severity="info">No instruments configured. Click "New Instrument" to add one.</Alert>
           </Box>
+        ) : isMobile ? (
+          // Mobile: Card layout
+          <Stack spacing={2} sx={{ p: 2 }}>
+            {instruments?.map((instrument) => (
+              <Card key={instrument.id} sx={{ backgroundColor: "#1B1F3B", border: "1px solid #252862" }}>
+                <CardContent>
+                  <Grid container spacing={1}>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Code</Typography>
+                      <Typography sx={{ color: "#EDE7F6", fontWeight: 600 }}>{instrument.instrumentCode}</Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Commodity</Typography>
+                      <Typography sx={{ color: "#EDE7F6" }}>{instrument.commodity}</Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Type</Typography>
+                      <Chip
+                        label={instrument.instrumentType}
+                        size="small"
+                        sx={{
+                          backgroundColor: "#7C4DFF20",
+                          color: "#B388FF",
+                          fontWeight: 600
+                        }}
+                      />
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Currency</Typography>
+                      <Typography sx={{ color: "#EDE7F6" }}>{instrument.currency}</Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Unit</Typography>
+                      <Typography sx={{ color: "#EDE7F6" }}>{instrument.unit}</Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Actions</Typography>
+                      <Button
+                        size="small"
+                        startIcon={<DeleteIcon />}
+                        onClick={() => handleDelete(instrument.instrumentCode)}
+                        sx={{ color: "#FF5252", textTransform: "none", mt: 0.5 }}
+                      >
+                        Delete
+                      </Button>
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+            ))}
+          </Stack>
         ) : (
+          // Desktop: Table layout
           <Table size="small">
             <TableHead>
               <TableRow sx={{ backgroundColor: "#1B1F3B" }}>
@@ -471,7 +535,7 @@ export default function InstrumentConfig() {
       </Paper>
 
       {/* Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth fullScreen={isMobile}>
         <Box
           sx={{
             background: "linear-gradient(135deg, #16182E 0%, #1B1F3B 100%)",
@@ -679,7 +743,7 @@ export default function InstrumentConfig() {
       </Dialog>
 
       {/* CSV Upload Dialog */}
-      <Dialog open={uploadDialog} onClose={() => setUploadDialog(false)} maxWidth="sm" fullWidth>
+      <Dialog open={uploadDialog} onClose={() => setUploadDialog(false)} maxWidth="sm" fullWidth fullScreen={isMobile}>
         <Box
           sx={{
             background: "linear-gradient(135deg, #16182E 0%, #1B1F3B 100%)",

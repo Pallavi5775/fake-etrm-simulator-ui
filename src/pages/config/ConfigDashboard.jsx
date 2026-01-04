@@ -3,11 +3,13 @@ import {
   Typography,
   Grid,
   Paper,
-  Button
+  Button,
+  useMediaQuery,
+  useTheme
 } from "@mui/material";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
+import apiConfig from '../../config/apiConfig';
 const CONFIG_SECTIONS = [
   { title: "Instruments", path: "/config/instruments" },
   { title: "Counterparties", path: "/config/counterparties" },
@@ -20,10 +22,13 @@ const CONFIG_SECTIONS = [
 ];
 
 export default function ConfigDashboard() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ open: false, message: "", severity: "info" });
-  const BASE_URL = "https://fake-etrm-simulator.onrender.com/api";
+    
+    const BASE_URL = apiConfig.baseURL;
 
   // CSV Upload Handler
   const handleCsvUpload = async (event, endpoint) => {
@@ -65,13 +70,14 @@ export default function ConfigDashboard() {
       </Typography>
 
       {/* CSV Upload Buttons */}
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item>
+      <Grid container spacing={2} sx={{ mb: 2 }} direction={isMobile ? "column" : "row"}>
+        <Grid item xs={12} md="auto">
           <Button
             variant="outlined"
             component="label"
             sx={{ minWidth: 180 }}
             disabled={loading}
+            fullWidth={isMobile}
           >
             Upload Trades CSV
             <input
@@ -82,12 +88,13 @@ export default function ConfigDashboard() {
             />
           </Button>
         </Grid>
-        <Grid item>
+        <Grid item xs={12} md="auto">
           <Button
             variant="outlined"
             component="label"
             sx={{ minWidth: 180 }}
             disabled={loading}
+            fullWidth={isMobile}
           >
             Upload Credit Limits CSV
             <input
@@ -98,12 +105,13 @@ export default function ConfigDashboard() {
             />
           </Button>
         </Grid>
-        <Grid item>
+        <Grid item xs={12} md="auto">
           <Button
             variant="outlined"
             component="label"
             sx={{ minWidth: 180 }}
             disabled={loading}
+            fullWidth={isMobile}
           >
             Upload Risk Limits CSV
             <input

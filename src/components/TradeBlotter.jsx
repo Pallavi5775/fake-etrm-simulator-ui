@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Box, Typography, CircularProgress } from "@mui/material";
+import { Box, Typography, CircularProgress, useMediaQuery, useTheme } from "@mui/material";
 
 import TradeTable from "../../components/TradeTable";
 import { fetchAllTrades } from "../../api/tradeApi";
@@ -8,6 +8,8 @@ import { fetchAllTrades } from "../../api/tradeApi";
  * Trade Blotter – Approved Trades
  */
 export default function TradeBlotter() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [trades, setTrades] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -26,8 +28,8 @@ export default function TradeBlotter() {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h5" sx={{ mb: 2 }}>
+    <Box sx={{ p: isMobile ? 1 : 3 }}>
+      <Typography variant={isMobile ? "h5" : "h5"} sx={{ mb: 2 }}>
         Trade Blotter (Approved Trades)
       </Typography>
 

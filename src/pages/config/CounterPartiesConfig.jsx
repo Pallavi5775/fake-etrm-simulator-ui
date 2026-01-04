@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import apiConfig from '../../config/apiConfig';
 import {
   Box,
   Typography,
@@ -14,7 +15,13 @@ import {
   TextField,
   CircularProgress,
   Alert,
-  Chip
+  Chip,
+  useMediaQuery,
+  useTheme,
+  Card,
+  CardContent,
+  Grid,
+  IconButton
 } from "@mui/material";
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material";
 
@@ -22,6 +29,8 @@ import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from "@mui/ico
  * Counterparties Configuration – Endur Style
  */
 export default function CounterPartiesConfig() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [counterparties, setCounterparties] = useState([]);
   const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
@@ -40,7 +49,7 @@ export default function CounterPartiesConfig() {
   const loadCounterparties = async () => {
     setLoading(true);
     try {
-      const res = await fetch("https://fake-etrm-simulator.onrender.com/api/counterparties");
+      const res = await fetch(apiConfig.baseURL + "/counterparties");
       if (res.ok) {
         const data = await res.json();
         setCounterparties(Array.isArray(data) ? data : []);
@@ -52,7 +61,7 @@ export default function CounterPartiesConfig() {
     } catch (err) {
       console.error("Failed to load counterparties:", err);
       setCounterparties([]);
-      alert("Cannot connect to backend. Please ensure the server is running at https://fake-etrm-simulator.onrender.com");
+      alert(`Cannot connect to backend. Please ensure the server is running at ${apiConfig.baseURL.replace(/\/api$/, "")}`);
     } finally {
       setLoading(false);
     }
@@ -82,7 +91,7 @@ export default function CounterPartiesConfig() {
       
       if (editingId) {
         // Update existing
-        const res = await fetch(`https://fake-etrm-simulator.onrender.com/api/counterparties/${editingId}`, {
+        const res = await fetch(`${apiConfig.baseURL}/counterparties/${editingId}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -95,7 +104,7 @@ export default function CounterPartiesConfig() {
         if (!res.ok) throw new Error("Failed to update");
       } else {
         // Create new
-        const res = await fetch("https://fake-etrm-simulator.onrender.com/api/counterparties", {
+        const res = await fetch(apiConfig.baseURL + "/counterparties", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -126,7 +135,7 @@ export default function CounterPartiesConfig() {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       const token = localStorage.getItem("token");
       
-      const res = await fetch(`https://fake-etrm-simulator.onrender.com/api/counterparties/${id}`, {
+      const res = await fetch(`${apiConfig.baseURL}/counterparties/${id}`, {
         method: "DELETE",
         headers: {
           "X-User-Name": user.username || "",
@@ -172,7 +181,7 @@ export default function CounterPartiesConfig() {
       </Box>
 
       {/* Toolbar */}
-      <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <Box sx={{ mb: 3, display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "stretch" : "center", gap: 2 }}>
         <Typography variant="h6" sx={{ color: "#EDE7F6" }}>
           Total Counterparties: {counterparties.length}
         </Typography>
@@ -183,8 +192,10 @@ export default function CounterPartiesConfig() {
           sx={{
             background: "linear-gradient(135deg, #7C4DFF 0%, #B388FF 100%)",
             textTransform: "none",
-            fontWeight: 600
+            fontWeight: 600,
+            minHeight: 48
           }}
+          fullWidth={isMobile}
         >
           New Counterparty
         </Button>
@@ -206,6 +217,65 @@ export default function CounterPartiesConfig() {
           <Box sx={{ p: 4 }}>
             <Alert severity="info">No counterparties configured. Click "New Counterparty" to add one.</Alert>
           </Box>
+        ) : isMobile ? (
+          // Mobile: Card layout
+          <Stack spacing={2} sx={{ p: 2 }}>
+            {counterparties?.map((counterparty) => (
+              <Card key={counterparty.id} sx={{ backgroundColor: "#1B1F3B", border: "1px solid #252862" }}>
+                <CardContent>
+                  <Typography variant="h6" sx={{ color: "#EDE7F6", mb: 1 }}>{counterparty.name}</Typography>
+                  <Grid container spacing={1}>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Code</Typography>
+                      <Typography sx={{ color: "#EDE7F6" }}>{counterparty.code}</Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Country</Typography>
+                      <Typography sx={{ color: "#EDE7F6" }}>{counterparty.country}</Typography>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Typography variant="caption" color="text.secondary">Credit Rating</Typography>
+                      <Chip
+                        label={counterparty.credit_rating}
+                        size="small"
+                        sx={{
+                          backgroundColor: `${getRatingColor(counterparty.credit_rating)}20`,
+                          color: getRatingColor(counterparty.credit_rating),
+                          fontWeight: 700
+                        }}
+                      />
+                    </Grid>
+                  </Grid>
+                  <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end", gap: 1 }}>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleOpenDialog(counterparty)}
+                      sx={{ 
+                        color: "#B388FF",
+                        "&:hover": {
+                          backgroundColor: "#7C4DFF20"
+                        }
+                      }}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleDelete(counterparty.id)}
+                      sx={{ 
+                        color: "#FF5252",
+                        "&:hover": {
+                          backgroundColor: "#FF525220"
+                        }
+                      }}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
+                </CardContent>
+              </Card>
+            ))}
+          </Stack>
         ) : (
           <Table size="small">
             <TableHead>

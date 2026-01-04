@@ -13,7 +13,8 @@ import EditIcon from "@mui/icons-material/Edit";
 import LoadingSpinner from "../../components/shared/LoadingSpinner";
 import Toast from "../../components/shared/Toast";
 
-const BASE_URL = "https://fake-etrm-simulator.onrender.com/api";
+import apiConfig from '../../config/apiConfig';
+const BASE_URL = apiConfig.baseURL;
 
 const LIMIT_TYPES = ["POSITION", "MTM", "VAR", "CONCENTRATION"];
 const LIMIT_SCOPES = ["PORTFOLIO", "COMMODITY", "COUNTERPARTY", "DESK"];

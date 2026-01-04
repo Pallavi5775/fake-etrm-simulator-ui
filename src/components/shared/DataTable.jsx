@@ -1,7 +1,8 @@
 import { useState } from "react";
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Paper, TablePagination, TableSortLabel, TextField, Box, IconButton
+  Paper, TablePagination, TableSortLabel, TextField, Box, IconButton,
+  Card, CardContent, Typography, Stack, Chip, Grid, useMediaQuery, useTheme
 } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
 
@@ -18,6 +19,8 @@ export default function DataTable({
   enableFilter = true,
   sx = {}
 }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(pageSize);
   const [sortBy, setSortBy] = useState(defaultSortBy);
@@ -82,70 +85,105 @@ export default function DataTable({
         </Box>
       )}
 
-      <TableContainer>
-        <Table>
-          <TableHead>
-            {showFilters && (
+      {isMobile ? (
+        // Mobile: Card layout
+        <Stack spacing={2} sx={{ p: 2 }}>
+          {paginatedRows.length === 0 ? (
+            <Typography align="center" color="text.secondary">No data found</Typography>
+          ) : (
+            paginatedRows?.map((row, idx) => (
+              <Card key={row.id || idx} sx={{ cursor: onRowClick ? "pointer" : "default" }} onClick={() => onRowClick && onRowClick(row)}>
+                <CardContent>
+                  <Grid container spacing={1}>
+                    {columns?.filter(col => col.field !== 'actions').map(col => (
+                      <Grid item xs={col.field === 'actions' ? 12 : 6} key={col.field}>
+                        <Typography variant="caption" color="text.secondary">{col.label}</Typography>
+                        <Box>
+                          {col.render ? col.render(row[col.field], row) : row[col.field]}
+                        </Box>
+                      </Grid>
+                    ))}
+                    {columns?.find(col => col.field === 'actions') && (
+                      <Grid item xs={12}>
+                        <Typography variant="caption" color="text.secondary">Actions</Typography>
+                        <Box sx={{ mt: 1 }}>
+                          {columns.find(col => col.field === 'actions').render(null, row)}
+                        </Box>
+                      </Grid>
+                    )}
+                  </Grid>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </Stack>
+      ) : (
+        // Desktop: Table layout
+        <TableContainer>
+          <Table>
+            <TableHead>
+              {showFilters && (
+                <TableRow>
+                  {columns?.map(col => (
+                    <TableCell key={`filter-${col.field}`}>
+                      {col.filterable !== false && (
+                        <TextField
+                          size="small"
+                          placeholder={`Filter ${col.label}`}
+                          value={filters[col.field] || ""}
+                          onChange={e => handleFilterChange(col.field, e.target.value)}
+                          fullWidth
+                        />
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              )}
               <TableRow>
                 {columns?.map(col => (
-                  <TableCell key={`filter-${col.field}`}>
-                    {col.filterable !== false && (
-                      <TextField
-                        size="small"
-                        placeholder={`Filter ${col.label}`}
-                        value={filters[col.field] || ""}
-                        onChange={e => handleFilterChange(col.field, e.target.value)}
-                        fullWidth
-                      />
+                  <TableCell key={col.field}>
+                    {col.sortable !== false ? (
+                      <TableSortLabel
+                        active={sortBy === col.field}
+                        direction={sortBy === col.field ? sortDirection : "asc"}
+                        onClick={() => handleSort(col.field)}
+                      >
+                        {col.label}
+                      </TableSortLabel>
+                    ) : (
+                      col.label
                     )}
                   </TableCell>
                 ))}
               </TableRow>
-            )}
-            <TableRow>
-              {columns?.map(col => (
-                <TableCell key={col.field}>
-                  {col.sortable !== false ? (
-                    <TableSortLabel
-                      active={sortBy === col.field}
-                      direction={sortBy === col.field ? sortDirection : "asc"}
-                      onClick={() => handleSort(col.field)}
-                    >
-                      {col.label}
-                    </TableSortLabel>
-                  ) : (
-                    col.label
-                  )}
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {paginatedRows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={columns.length} align="center">
-                  No data found
-                </TableCell>
-              </TableRow>
-            ) : (
-              paginatedRows?.map((row, idx) => (
-                <TableRow
-                  key={row.id || idx}
-                  hover
-                  onClick={() => onRowClick && onRowClick(row)}
-                  sx={{ cursor: onRowClick ? "pointer" : "default" }}
-                >
-                  {columns?.map(col => (
-                    <TableCell key={col.field}>
-                      {col.render ? col.render(row[col.field], row) : row[col.field]}
-                    </TableCell>
-                  ))}
+            </TableHead>
+            <TableBody>
+              {paginatedRows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} align="center">
+                    No data found
+                  </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+              ) : (
+                paginatedRows?.map((row, idx) => (
+                  <TableRow
+                    key={row.id || idx}
+                    hover
+                    onClick={() => onRowClick && onRowClick(row)}
+                    sx={{ cursor: onRowClick ? "pointer" : "default" }}
+                  >
+                    {columns?.map(col => (
+                      <TableCell key={col.field}>
+                        {col.render ? col.render(row[col.field], row) : row[col.field]}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
       <TablePagination
         rowsPerPageOptions={[5, 10, 25, 50]}

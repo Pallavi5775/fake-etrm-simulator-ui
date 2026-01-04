@@ -13,7 +13,8 @@ import LoadingSpinner from "../../components/shared/LoadingSpinner";
 import Toast from "../../components/shared/Toast";
 import DataTable from "../../components/shared/DataTable";
 
-const BASE_URL = "https://fake-etrm-simulator.onrender.com/api";
+import apiConfig from '../../config/apiConfig';
+const BASE_URL = apiConfig.baseURL;
 
 const SCENARIO_TYPES = [
   { value: "SPOT_SHOCK", label: "Spot Price Shock" },

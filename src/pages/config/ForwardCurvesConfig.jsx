@@ -13,7 +13,8 @@ import DataTable from "../../components/shared/DataTable";
 import LoadingSpinner from "../../components/shared/LoadingSpinner";
 import Toast from "../../components/shared/Toast";
 
-const BASE_URL = "https://fake-etrm-simulator.onrender.com/api";
+import apiConfig from '../../config/apiConfig';
+const BASE_URL = apiConfig.baseURL;
 
 /**
  * Forward Curves Configuration - Manage forward curve points for pricing

@@ -10,7 +10,8 @@ import Toast from "../../components/shared/Toast";
 import DataTable from "../../components/shared/DataTable";
 import { getPortfolios } from '../../api/portfolioApi';
 
-const BASE_URL = "https://fake-etrm-simulator.onrender.com/api";
+import apiConfig from '../../config/apiConfig';
+const BASE_URL = apiConfig.baseURL;
 
 const CONFIDENCE_LEVELS = [90, 95, 99];
 const HORIZONS = [1, 5, 10];

@@ -1,3 +1,4 @@
+import apiConfig from '../config/apiConfig';
 import httpClient from "./httpClient";
 
 /* =========================
@@ -26,8 +27,7 @@ export async function bookTradeFromTemplate(payload) {
   try {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const token = localStorage.getItem("token");
-    
-    const res = await fetch("https://fake-etrm-simulator.onrender.com/api/trades/book-from-template", {
+    const res = await fetch(apiConfig.baseURL + "/trades/book-from-template", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -40,17 +40,15 @@ export async function bookTradeFromTemplate(payload) {
         createdByUser: user.username || "UNKNOWN"
       })
     });
-    
     if (!res.ok) {
       const errorText = await res.text();
       throw new Error(`Booking failed (HTTP ${res.status}): ${errorText}`);
     }
-    
     return res.json();
   } catch (err) {
     console.error("Error booking trade:", err);
     if (err.message === "Failed to fetch") {
-      throw new Error("Cannot connect to backend. Please ensure the server is running at https://fake-etrm-simulator.onrender.com");
+      throw new Error(`Cannot connect to backend. Please ensure the server is running at ${apiConfig.baseURL.replace(/\/api$/, "")}`);
     }
     throw err;
   }
@@ -120,9 +118,8 @@ export async function rejectTrade(tradeId, reason) {
 export async function fetchApprovedTrades() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const token = localStorage.getItem("token");
-  
   const res = await fetch(
-    "https://fake-etrm-simulator.onrender.com/api/trades?status=APPROVED",
+    apiConfig.baseURL + "/trades?status=APPROVED",
     {
       headers: {
         "Content-Type": "application/json",
@@ -132,20 +129,17 @@ export async function fetchApprovedTrades() {
       }
     }
   );
-
   if (!res.ok) {
     throw new Error("Failed to fetch approved trades");
   }
-
   return res.json();
 }
 
 export async function fetchRejectedTrades() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const token = localStorage.getItem("token");
-  
   const res = await fetch(
-    "https://fake-etrm-simulator.onrender.com/api/trades?status=REJECTED",
+    apiConfig.baseURL + "/trades?status=REJECTED",
     {
       headers: {
         "Content-Type": "application/json",
@@ -155,11 +149,9 @@ export async function fetchRejectedTrades() {
       }
     }
   );
-
   if (!res.ok) {
     throw new Error("Failed to fetch rejected trades");
   }
-
   return res.json();
 }
 

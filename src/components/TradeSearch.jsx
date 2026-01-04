@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import apiConfig from '../config/apiConfig';
 import {
   Box, Typography, Paper, Stack, Button, TextField, MenuItem,
   Grid, Chip, IconButton, Card, CardContent, Divider, Tooltip
@@ -13,7 +14,7 @@ import LoadingSpinner from "./shared/LoadingSpinner";
 import Toast from "./shared/Toast";
 import TradeLifecycleActions from "./TradeLifecycleActions";
 
-const BASE_URL = "https://fake-etrm-simulator.onrender.com/api/trades";
+const BASE_URL = apiConfig.baseURL + "/trades";
 
 const STATUS_OPTIONS = ["PENDING_APPROVAL", "APPROVED", "REJECTED", "CANCELLED", "SETTLED"];
 const BUY_SELL_OPTIONS = ["BUY", "SELL"];
@@ -77,7 +78,7 @@ export default function TradeSearch() {
         setError(errorMsg);
         setToast({
           open: true,
-          message: errorMsg + ". Please check if the backend is running.",
+          message: errorMsg + `. Please check if the backend is running at ${apiConfig.baseURL.replace(/\/api$/, "")}.`,
           severity: "error"
         });
       }

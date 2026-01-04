@@ -14,7 +14,8 @@
   import DataTable from "../../components/shared/DataTable";
   import { getPortfolios } from '../../api/portfolioApi';
 
-  const BASE_URL = "https://fake-etrm-simulator.onrender.com/api";
+  import apiConfig from '../../config/apiConfig';
+  const BASE_URL = apiConfig.baseURL;
 
 /**
  * Batch Valuation Management - Trigger and monitor EOD valuation runs

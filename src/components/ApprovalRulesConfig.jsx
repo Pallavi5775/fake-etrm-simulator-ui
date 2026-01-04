@@ -1,27 +1,20 @@
 import { useState, useEffect } from "react";
+import apiConfig from '../config/apiConfig';
 import {
   Box, Typography, Paper, Stack, Button, TextField, MenuItem,
   Table, TableHead, TableRow, TableCell, TableBody,
   Dialog, FormControl, InputLabel, Select, Switch,
-  Alert, CircularProgress, Chip, IconButton
+  Alert, CircularProgress, Chip, IconButton, Card, CardContent,
+  useMediaQuery, useTheme, Grid
 } from "@mui/material";
 import { Add as AddIcon, Delete as DeleteIcon, UploadFile as UploadFileIcon } from "@mui/icons-material";
 
-const BASE_URL = "https://fake-etrm-simulator.onrender.com/api/approval-rules";
+const BASE_URL = apiConfig.baseURL + "/approval-rules";
 
 const TRIGGER_EVENTS = [
   { value: "TRADE_BOOK", label: "Trade Book" },
   { value: "TRADE_AMEND", label: "Trade Amend" },
   { value: "TRADE_CANCEL", label: "Trade Cancel" }
-];
-
-const CONDITION_OPERATORS = [
-  { value: "==", label: "Equals (==)" },
-  { value: "!=", label: "Not Equals (!=)" },
-  { value: ">", label: "Greater Than (>)" },
-  { value: "<", label: "Less Than (<)" },
-  { value: ">=", label: "Greater or Equal (>=)" },
-  { value: "<=", label: "Less or Equal (<=)" }
 ];
 
 const APPROVAL_ROLES = [
@@ -33,6 +26,8 @@ const APPROVAL_ROLES = [
 ];
 
 export default function ApprovalRulesConfig() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -43,11 +38,16 @@ export default function ApprovalRulesConfig() {
     priority: 1,
     active: true,
     conditionField: "",
-    conditionOperator: "==",
+    conditionOperator: "",
     conditionValue: "",
     approvalRole: "RISK",
     approvalLevel: 1
   });
+
+  // Backend-driven dropdown data
+  const [conditionFields, setConditionFields] = useState([]);
+  const [conditionOperators, setConditionOperators] = useState([]);
+  const [conditionValues, setConditionValues] = useState([]);
 
   // CSV Upload
   const [uploadDialog, setUploadDialog] = useState(false);
@@ -57,7 +57,52 @@ export default function ApprovalRulesConfig() {
 
   useEffect(() => {
     fetchRules();
+    fetchMetadata();
   }, []);
+
+  useEffect(() => {
+    fetchConditionValues(formData.conditionField);
+    // Reset conditionValue when field changes
+    setFormData(prev => ({ ...prev, conditionValue: "" }));
+  }, [formData.conditionField]);
+
+  const fetchMetadata = async () => {
+    try {
+      const [fieldsRes, operatorsRes] = await Promise.all([
+        fetch(`${BASE_URL}/metadata/fields`),
+        fetch(`${BASE_URL}/metadata/operators`)
+      ]);
+      if (fieldsRes.ok) {
+        const fields = await fieldsRes.json();
+        setConditionFields(Array.isArray(fields) ? fields : []);
+      }
+      if (operatorsRes.ok) {
+        const operators = await operatorsRes.json();
+        setConditionOperators(Array.isArray(operators) ? operators : []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch metadata:", err);
+    }
+  };
+
+  const fetchConditionValues = async (field) => {
+    if (!field) {
+      setConditionValues([]);
+      return;
+    }
+    try {
+      const res = await fetch(`${BASE_URL}/metadata/values?field=${encodeURIComponent(field)}`);
+      if (res.ok) {
+        const values = await res.json();
+        setConditionValues(Array.isArray(values) ? values : []);
+      } else {
+        setConditionValues([]);
+      }
+    } catch (err) {
+      console.error("Failed to fetch condition values:", err);
+      setConditionValues([]);
+    }
+  };
 
   const fetchRules = async () => {
     setLoading(true);
@@ -87,11 +132,12 @@ export default function ApprovalRulesConfig() {
       priority: 1,
       active: true,
       conditionField: "",
-      conditionOperator: "==",
+      conditionOperator: "",
       conditionValue: "",
       approvalRole: "RISK",
       approvalLevel: 1
     });
+    setConditionValues([]);
     setError(null);
     setOpenDialog(true);
   };
@@ -103,8 +149,8 @@ export default function ApprovalRulesConfig() {
 
   const handleCreateRule = async () => {
     setError(null);
-    if (!formData.ruleName || !formData.conditionField || !formData.conditionValue) {
-      setError("Rule name, condition field, and condition value are required");
+    if (!formData.ruleName || !formData.conditionField || !formData.conditionOperator || !formData.conditionValue) {
+      setError("Rule name, condition field, operator, and value are required");
       return;
     }
 
@@ -232,11 +278,11 @@ export default function ApprovalRulesConfig() {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: isMobile ? 1 : 3 }}>
       {/* Header */}
       <Box sx={{ mb: 3 }}>
         <Typography
-          variant="h4"
+          variant={isMobile ? "h5" : "h4"}
           sx={{ fontWeight: 600, mb: 1, color: "#EDE7F6", letterSpacing: 0.5 }}
         >
           Approval Rules Configuration
@@ -254,11 +300,11 @@ export default function ApprovalRulesConfig() {
       )}
 
       {/* Toolbar */}
-      <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <Box sx={{ mb: 3, display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "stretch" : "center", gap: 2 }}>
         <Typography variant="h6" sx={{ color: "#EDE7F6" }}>
           Total Rules: {rules.length}
         </Typography>
-        <Stack direction="row" spacing={2}>
+        <Stack direction={isMobile ? "column" : "row"} spacing={2} sx={{ width: isMobile ? "100%" : "auto" }}>
           <Button
             variant="outlined"
             startIcon={<UploadFileIcon />}
@@ -271,8 +317,10 @@ export default function ApprovalRulesConfig() {
               "&:hover": {
                 borderColor: "#B388FF",
                 backgroundColor: "#7C4DFF20"
-              }
+              },
+              minHeight: 48
             }}
+            fullWidth={isMobile}
           >
             Upload CSV
           </Button>
@@ -283,15 +331,17 @@ export default function ApprovalRulesConfig() {
             sx={{
               background: "linear-gradient(135deg, #7C4DFF 0%, #B388FF 100%)",
               textTransform: "none",
-              fontWeight: 600
+              fontWeight: 600,
+              minHeight: 48
             }}
+            fullWidth={isMobile}
           >
             New Rule
           </Button>
         </Stack>
       </Box>
 
-      {/* Rules Table */}
+      {/* Rules Display */}
       <Paper
         sx={{
           background: "linear-gradient(135deg, #16182E 0%, #1B1F3B 100%)",
@@ -307,7 +357,71 @@ export default function ApprovalRulesConfig() {
           <Box sx={{ p: 4 }}>
             <Alert severity="info">No approval rules configured. Create one or upload CSV.</Alert>
           </Box>
+        ) : isMobile ? (
+          // Mobile: Card layout
+          <Stack spacing={2} sx={{ p: 2 }}>
+            {rules.map((rule) => (
+              <Card key={rule.ruleId || rule.id} sx={{ backgroundColor: "#1B1F3B", border: "1px solid #252862" }}>
+                <CardContent>
+                  <Typography variant="h6" sx={{ color: "#EDE7F6", mb: 1 }}>{rule.ruleName || "N/A"}</Typography>
+                  <Grid container spacing={1}>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Trigger</Typography>
+                      <Typography sx={{ color: "#EDE7F6" }}>{rule.triggerEvent || "N/A"}</Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Priority</Typography>
+                      <Typography sx={{ color: "#EDE7F6" }}>{rule.priority || "N/A"}</Typography>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Typography variant="caption" color="text.secondary">Condition</Typography>
+                      <Typography sx={{ color: "#EDE7F6", fontSize: "0.85rem" }}>
+                        {rule.conditions && rule.conditions.length > 0 ? (
+                          rule.conditions.map((cond, idx) => `${cond.fieldCode} ${cond.operator} ${cond.value1}`).join(", ")
+                        ) : (
+                          `${rule.conditionField || "N/A"} ${rule.conditionOperator || ""} ${rule.conditionValue || "N/A"}`
+                        )}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Role</Typography>
+                      {rule.routing && rule.routing.length > 0 ? (
+                        rule.routing.map((route, idx) => (
+                          <Chip key={idx} label={`${route.approvalRole} (L${route.approvalLevel})`} size="small" sx={{ backgroundColor: "#7C4DFF20", color: "#B388FF", mr: 0.5, mb: 0.5 }} />
+                        ))
+                      ) : (
+                        <Chip label={rule.approvalRole || "N/A"} size="small" sx={{ backgroundColor: "#7C4DFF20", color: "#B388FF" }} />
+                      )}
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Status</Typography>
+                      <Chip
+                        label={rule.active || rule.status === "ACTIVE" ? "Active" : "Inactive"}
+                        size="small"
+                        color={(rule.active || rule.status === "ACTIVE") ? "success" : "default"}
+                      />
+                    </Grid>
+                  </Grid>
+                  <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleDelete(rule.ruleId || rule.id)}
+                      sx={{ 
+                        color: "#FF5252",
+                        "&:hover": {
+                          backgroundColor: "#FF525220"
+                        }
+                      }}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
+                </CardContent>
+              </Card>
+            ))}
+          </Stack>
         ) : (
+          // Desktop: Table layout
           <Table size="small">
             <TableHead>
               <TableRow sx={{ backgroundColor: "#1B1F3B" }}>
@@ -400,7 +514,7 @@ export default function ApprovalRulesConfig() {
       </Paper>
 
       {/* Create Rule Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth fullScreen={isMobile}>
         <Box
           sx={{
             background: "linear-gradient(135deg, #16182E 0%, #1B1F3B 100%)",
@@ -413,7 +527,7 @@ export default function ApprovalRulesConfig() {
           </Typography>
         </Box>
 
-        <Stack spacing={2} sx={{ p: 3, backgroundColor: "#16182E" }}>
+        <Stack spacing={2} sx={{ p: 3, backgroundColor: "#16182E", flex: 1, overflow: "auto" }}>
           <TextField
             label="Rule Name"
             value={formData.ruleName}
@@ -450,13 +564,19 @@ export default function ApprovalRulesConfig() {
 
           <TextField
             label="Condition Field"
-            placeholder="e.g., quantity, mtm, commodity"
             value={formData.conditionField}
             onChange={(e) => setFormData({ ...formData, conditionField: e.target.value })}
             fullWidth
             size="small"
             required
-          />
+            select
+          >
+            {conditionFields.map((field) => (
+              <MenuItem key={field} value={field}>
+                {field}
+              </MenuItem>
+            ))}
+          </TextField>
 
           <FormControl fullWidth size="small">
             <InputLabel>Condition Operator</InputLabel>
@@ -465,23 +585,41 @@ export default function ApprovalRulesConfig() {
               onChange={(e) => setFormData({ ...formData, conditionOperator: e.target.value })}
               label="Condition Operator"
             >
-              {CONDITION_OPERATORS.map((op) => (
-                <MenuItem key={op.value} value={op.value}>
-                  {op.label}
+              {conditionOperators.map((op) => (
+                <MenuItem key={op} value={op}>
+                  {op}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
 
-          <TextField
-            label="Condition Value"
-            placeholder="e.g., 1000, HIGH_RISK, POWER"
-            value={formData.conditionValue}
-            onChange={(e) => setFormData({ ...formData, conditionValue: e.target.value })}
-            fullWidth
-            size="small"
-            required
-          />
+          {conditionValues.length > 0 ? (
+            <TextField
+              label="Condition Value"
+              value={formData.conditionValue}
+              onChange={(e) => setFormData({ ...formData, conditionValue: e.target.value })}
+              fullWidth
+              size="small"
+              required
+              select
+            >
+              {conditionValues.map((value) => (
+                <MenuItem key={value} value={value}>
+                  {value}
+                </MenuItem>
+              ))}
+            </TextField>
+          ) : (
+            <TextField
+              label="Condition Value"
+              placeholder="e.g., 1000, HIGH_RISK, POWER"
+              value={formData.conditionValue}
+              onChange={(e) => setFormData({ ...formData, conditionValue: e.target.value })}
+              fullWidth
+              size="small"
+              required
+            />
+          )}
 
           <FormControl fullWidth size="small">
             <InputLabel>Approval Role</InputLabel>
@@ -520,14 +658,14 @@ export default function ApprovalRulesConfig() {
         </Stack>
 
         <Stack direction="row" spacing={2} sx={{ p: 3, borderTop: "1px solid #252862", backgroundColor: "#16182E" }}>
-          <Button variant="outlined" onClick={handleCloseDialog} fullWidth>
+          <Button variant="outlined" onClick={handleCloseDialog} fullWidth={isMobile}>
             Cancel
           </Button>
           <Button
             variant="contained"
             onClick={handleCreateRule}
             disabled={loading}
-            fullWidth
+            fullWidth={isMobile}
             sx={{ background: "linear-gradient(135deg, #7C4DFF 0%, #B388FF 100%)" }}
           >
             {loading ? <CircularProgress size={20} /> : "Create Rule"}
@@ -536,7 +674,7 @@ export default function ApprovalRulesConfig() {
       </Dialog>
 
       {/* CSV Upload Dialog */}
-      <Dialog open={uploadDialog} onClose={() => setUploadDialog(false)} maxWidth="md" fullWidth>
+      <Dialog open={uploadDialog} onClose={() => setUploadDialog(false)} maxWidth="md" fullWidth fullScreen={isMobile}>
         <Box
           sx={{
             background: "linear-gradient(135deg, #16182E 0%, #1B1F3B 100%)",
@@ -549,7 +687,7 @@ export default function ApprovalRulesConfig() {
           </Typography>
         </Box>
 
-        <Stack spacing={2} sx={{ p: 3, backgroundColor: "#16182E" }}>
+        <Stack spacing={2} sx={{ p: 3, backgroundColor: "#16182E", flex: 1, overflow: "auto" }}>
           <Alert severity="info" sx={{ mb: 2 }}>
             <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
               CSV Format Required:
@@ -563,7 +701,7 @@ High MTM Trade Approval,TRADE_BOOK,4,TRUE,ACTIVE,1,mtm,>,500000,RISK,1
 Gas Trade Approval,TRADE_BOOK,5,TRUE,ACTIVE,1,commodity;quantity,==;>,GAS;5000,SENIOR_TRADER,1`}
             </Typography>
             <Typography variant="caption" sx={{ display: "block", mt: 1, color: "warning.main" }}>
-              Note: Multi-condition rules use semicolon (;) separator for fields, operators, and values
+              Note: Multi-condition rules use semicolon (;) separator for fields, operators, and values. Dropdowns are populated from backend metadata APIs.
             </Typography>
           </Alert>
 
@@ -609,7 +747,7 @@ Gas Trade Approval,TRADE_BOOK,5,TRUE,ACTIVE,1,commodity;quantity,==;>,GAS;5000,S
               setSelectedFile(null);
               setUploadResult(null);
             }}
-            fullWidth
+            fullWidth={isMobile}
           >
             Cancel
           </Button>
@@ -617,7 +755,7 @@ Gas Trade Approval,TRADE_BOOK,5,TRUE,ACTIVE,1,commodity;quantity,==;>,GAS;5000,S
             variant="contained"
             onClick={handleCSVUpload}
             disabled={!selectedFile || uploadLoading}
-            fullWidth
+            fullWidth={isMobile}
             sx={{ background: "linear-gradient(135deg, #7C4DFF 0%, #B388FF 100%)" }}
           >
             {uploadLoading ? <CircularProgress size={20} /> : "Upload"}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { getCommodities } from '../api/commoditiesApi';
 import httpClient from '../api/httpClient';
+import apiConfig from '../config/apiConfig';
 import {
   Box, Typography, Table, TableHead, TableRow, TableCell,
   TableBody, Switch, Chip, Paper, Button, Dialog, TextField,
@@ -9,8 +10,8 @@ import {
 } from "@mui/material";
 import { Add as AddIcon, UploadFile as UploadFileIcon } from "@mui/icons-material";
 
-const BASE_URL = "https://fake-etrm-simulator.onrender.com/api/templates";
-const INSTRUMENTS_URL = "https://fake-etrm-simulator.onrender.com/api/instruments";
+const BASE_URL = apiConfig.baseURL + "/templates";
+const INSTRUMENTS_URL = apiConfig.baseURL + "/instruments";
 
 export default function DealTemplateList() {
   const [templates, setTemplates] = useState([]);

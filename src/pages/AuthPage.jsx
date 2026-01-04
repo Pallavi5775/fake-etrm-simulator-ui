@@ -1,16 +1,21 @@
 import { useState, useEffect } from "react";
 import {
   Box, Card, CardContent, TextField, Button, Typography,
-  Tab, Tabs, MenuItem, Stack, Alert, Paper
+  Tab, Tabs, MenuItem, Stack, Alert, Paper,
+  useMediaQuery, useTheme
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import apiConfig from '../config/apiConfig';
 
-const BASE_URL = "https://fake-etrm-simulator.onrender.com/api/auth";
+const BASE_URL = apiConfig.baseURL + "/auth";
 
 export default function AuthPage() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const [tab, setTab] = useState(0);
   const [roles, setRoles] = useState([]);
+  const [users, setUsers] = useState([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -52,34 +57,57 @@ export default function AuthPage() {
         setError("Warning: Could not load roles. Using default role.");
         setRoles([{ value: "RISK", label: "Risk Manager" }]);
       });
+
+    // Fetch all users for login dropdown
+    fetch(`${apiConfig.baseURL}/users`)
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then(data => {
+        console.log("Users API response:", data); // Debug log
+        const usersList = Array.isArray(data) ? data : (data.users || []);
+        console.log("Parsed users list:", usersList); // Debug log
+        setUsers(usersList);
+      })
+      .catch(err => {
+        console.error("Failed to load users:", err);
+        // Don't show error for users, just leave dropdown empty
+        setUsers([]);
+      });
   }, [navigate]);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
+  const handleUserSelect = async (selectedUser) => {
+    if (selectedUser) {
+      const username = selectedUser.username;
+      const password = selectedUser.password;
+      
+      // Perform login automatically
+      setError("");
+      setSuccess("");
 
-    try {
-      const res = await fetch(`${BASE_URL}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(loginData)
-      });
+      try {
+        const res = await fetch(`${BASE_URL}/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password })
+        });
 
-      const data = await res.json();
+        const data = await res.json();
 
-      if (data.userId) {
-        // Success
-        localStorage.setItem("user", JSON.stringify(data));
-        localStorage.setItem("token", data.token);
-        setSuccess("Login successful! Redirecting...");
-        setTimeout(() => navigate("/config"), 1000);
-      } else {
-        setError(data.message || "Login failed");
+        if (data.userId) {
+          // Success
+          localStorage.setItem("user", JSON.stringify(data));
+          localStorage.setItem("token", data.token);
+          setSuccess("Login successful! Redirecting...");
+          setTimeout(() => navigate("/config"), 1000);
+        } else {
+          setError(data.message || "Login failed");
+        }
+      } catch (err) {
+        setError("Network error. Please try again.");
+        console.error("Login error:", err);
       }
-    } catch (err) {
-      setError("Network error. Please try again.");
-      console.error("Login error:", err);
     }
   };
 
@@ -131,12 +159,12 @@ export default function AuthPage() {
         alignItems: "center",
         justifyContent: "center",
         bgcolor: "grey.100",
-        p: 2
+        p: isMobile ? 1 : 2
       }}
     >
-      <Card sx={{ maxWidth: 500, width: "100%" }} elevation={3}>
-        <CardContent sx={{ p: 4 }}>
-          <Typography variant="h4" align="center" gutterBottom fontWeight="bold">
+      <Card sx={{ maxWidth: isMobile ? "100%" : 500, width: "100%", mx: isMobile ? 1 : 0 }} elevation={3}>
+        <CardContent sx={{ p: isMobile ? 2 : 4 }}>
+          <Typography variant={isMobile ? "h5" : "h4"} align="center" gutterBottom fontWeight="bold">
             CTRM Simulator
           </Typography>
           <Typography variant="body2" align="center" color="text.secondary" sx={{ mb: 3 }}>
@@ -162,40 +190,34 @@ export default function AuthPage() {
 
           {/* Login Form */}
           {tab === 0 && (
-            <Box component="form" onSubmit={handleLogin}>
+            <Box>
               <Stack spacing={2}>
-                <TextField
-                  label="Username"
-                  fullWidth
-                  required
-                  value={loginData.username}
-                  onChange={(e) =>
-                    setLoginData({ ...loginData, username: e.target.value })
-                  }
-                  autoComplete="username"
-                />
-
-                <TextField
-                  label="Password"
-                  type="password"
-                  fullWidth
-                  required
-                  value={loginData.password}
-                  onChange={(e) =>
-                    setLoginData({ ...loginData, password: e.target.value })
-                  }
-                  autoComplete="current-password"
-                />
-
-                <Button
-                  type="submit"
-                  variant="contained"
-                  size="large"
-                  fullWidth
-                  sx={{ mt: 2 }}
-                >
-                  Login
-                </Button>
+                {users.length > 0 ? (
+                  <TextField
+                    select
+                    label="Username"
+                    fullWidth
+                    value=""
+                    onChange={(e) => {
+                      const selectedUser = users.find(u => u.username === e.target.value);
+                      handleUserSelect(selectedUser);
+                    }}
+                    helperText="Select a user to login automatically"
+                  >
+                    <MenuItem value="">
+                      <em>Select a user...</em>
+                    </MenuItem>
+                    {users.map((user) => (
+                      <MenuItem key={user.username} value={user.username}>
+                        {user.username} ({user.role || 'User'})
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    Loading users...
+                  </Typography>
+                )}
               </Stack>
             </Box>
           )}
@@ -280,11 +302,20 @@ export default function AuthPage() {
             </Box>
           )}
 
-          <Paper variant="outlined" sx={{ mt: 3, p: 2, bgcolor: "grey.50" }}>
+          <Paper variant="outlined" sx={{ mt: 3, p: isMobile ? 1.5 : 2, bgcolor: "grey.50" }}>
             <Typography variant="caption" color="text.secondary">
-              <strong>Demo Accounts:</strong><br />
-              Username: risk_user | Password: password123 (Risk Manager)<br />
-              Username: trader1 | Password: password123 (Senior Trader)
+              <strong>Login:</strong> Select a user from the dropdown above to login automatically.<br />
+              {isMobile ? (
+                <>
+                  <br />Available accounts:<br />
+                  • risk_user (Risk Manager)<br />
+                  • trader1 (Senior Trader)
+                </>
+              ) : (
+                <>
+                  Available accounts: risk_user (Risk Manager), trader1 (Senior Trader)
+                </>
+              )}
             </Typography>
           </Paper>
         </CardContent>

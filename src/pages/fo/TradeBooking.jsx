@@ -15,6 +15,7 @@ import {
   fetchDealTemplates,
   bookTradeFromTemplate
 } from "../../api/tradeApi";
+import apiConfig from '../../config/apiConfig';
 
 /**
  * Front Office – Trade Booking (Endur-style)
@@ -48,7 +49,7 @@ export default function TradeBooking() {
       });
     
     // Fetch counterparties
-    fetch("https://fake-etrm-simulator.onrender.com/api/counterparties")
+    fetch(apiConfig.baseURL + "/counterparties")
       .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
@@ -61,7 +62,7 @@ export default function TradeBooking() {
       });
     
     // Fetch portfolios
-    fetch("https://fake-etrm-simulator.onrender.com/api/portfolios")
+    fetch(apiConfig.baseURL + "/portfolios")
       .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();

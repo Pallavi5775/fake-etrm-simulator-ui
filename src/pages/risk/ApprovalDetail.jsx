@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import {
   Box, Typography, Paper, Stack, Button, Divider, Grid,
-  Card, CardContent, TextField, Chip, Alert
+  Card, CardContent, TextField, Chip, Alert,
+  useMediaQuery, useTheme
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -11,12 +12,15 @@ import LoadingSpinner from "../../components/shared/LoadingSpinner";
 import Toast from "../../components/shared/Toast";
 import ConfirmDialog from "../../components/shared/ConfirmDialog";
 
-const BASE_URL = "https://fake-etrm-simulator.onrender.com/api";
+import apiConfig from '../../config/apiConfig';
+const BASE_URL = apiConfig.baseURL;
 
 /**
  * Approval Detail View - Shows full trade details with approval actions
  */
 export default function ApprovalDetail() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { approvalId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -180,20 +184,43 @@ export default function ApprovalDetail() {
   }
 
   const trade = approval.trade || {};
-  const isPending = approval.status === "PENDING";
+  // Support for multi-condition, multi-level approval
+  // approval.conditions: [{ field, operator, value, met }]
+  // approval.routing: [{ approvalRole, approvalLevel, status, actedBy, comments, timestamp }]
+  const conditions = approval.conditions || [
+    {
+      field: approval.conditionField,
+      operator: approval.conditionOperator,
+      value: approval.conditionValue,
+      met: approval.conditionMet !== undefined ? approval.conditionMet : true
+    }
+  ];
+  const routing = approval.routing || [
+    {
+      approvalRole: approval.approvalRole,
+      approvalLevel: approval.approvalLevel,
+      status: approval.status,
+      actedBy: approval.approvedBy || approval.rejectedBy,
+      comments: approval.comments,
+      timestamp: approval.approvalTimestamp,
+      rejectionReason: approval.rejectionReason
+    }
+  ];
+  const isPending = routing.some(r => r.status === "PENDING");
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1400, mx: "auto" }}>
+    <Box sx={{ p: isMobile ? 1 : 3, maxWidth: 1400, mx: "auto" }}>
       {/* Header */}
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-        <Stack direction="row" spacing={2} alignItems="center">
+      <Stack direction={isMobile ? "column" : "row"} justifyContent="space-between" alignItems={isMobile ? "stretch" : "center"} sx={{ mb: 3, gap: 2 }}>
+        <Stack direction={isMobile ? "column" : "row"} spacing={2} alignItems={isMobile ? "stretch" : "center"}>
           <Button
             startIcon={<ArrowBackIcon />}
             onClick={() => navigate("/risk/approvals")}
+            fullWidth={isMobile}
           >
             Back
           </Button>
-          <Typography variant="h4">
+          <Typography variant={isMobile ? "h5" : "h4"}>
             Approval Detail #{approval.id}
           </Typography>
           <Chip
@@ -381,7 +408,7 @@ export default function ApprovalDetail() {
         {/* Right Column - Approval Info & Actions */}
         <Grid item xs={12} md={4}>
           <Stack spacing={3}>
-            {/* Approval Rule */}
+            {/* Approval Rule & Conditions */}
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" sx={{ mb: 2 }}>
                 ⚙️ Approval Rule
@@ -397,140 +424,161 @@ export default function ApprovalDetail() {
                 </Box>
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Required Role
-                  </Typography>
-                  <Typography variant="body1">
-                    <Chip label={approval.approvalRole} size="small" color="primary" />
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary">
                     Trigger Reason
                   </Typography>
                   <Typography variant="body2">
                     {approval.reason || "Rule condition met"}
                   </Typography>
                 </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">
+                    Conditions
+                  </Typography>
+                  <Stack spacing={0.5}>
+                    {conditions.map((cond, idx) => (
+                      <Chip
+                        key={idx}
+                        label={`${cond.field} ${cond.operator} ${cond.value} (${cond.met ? 'Met' : 'Not Met'})`}
+                        color={cond.met ? 'success' : 'warning'}
+                        size="small"
+                        sx={{ mr: 1, mb: 0.5 }}
+                      />
+                    ))}
+                  </Stack>
+                </Box>
               </Stack>
             </Paper>
 
-            {/* Approval Actions */}
+            {/* Approval Actions for Each Pending Level/Role */}
             {isPending && (
               <Paper sx={{ p: 3 }}>
                 <Typography variant="h6" sx={{ mb: 2 }}>
-                  🎯 Decision
+                  🎯 Pending Approvals
                 </Typography>
                 <Stack spacing={2}>
-                  <TextField
-                    label="Comments (optional)"
-                    multiline
-                    rows={3}
-                    fullWidth
-                    value={comments}
-                    onChange={e => setComments(e.target.value)}
-                    placeholder="Add any notes about your decision..."
-                  />
-
-                  <Button
-                    variant="contained"
-                    color="success"
-                    startIcon={<CheckCircleIcon />}
-                    fullWidth
-                    size="large"
-                    onClick={() => setConfirmDialog({ open: true, action: "approve" })}
-                  >
-                    Approve Trade
-                  </Button>
-
-                  <Divider>OR</Divider>
-
-                  <TextField
-                    label="Rejection Reason (required)"
-                    multiline
-                    rows={3}
-                    fullWidth
-                    required
-                    value={rejectReason}
-                    onChange={e => setRejectReason(e.target.value)}
-                    placeholder="Why are you rejecting this trade?"
-                    error={!rejectReason}
-                  />
-
-                  <Button
-                    variant="contained"
-                    color="error"
-                    startIcon={<CancelIcon />}
-                    fullWidth
-                    size="large"
-                    onClick={() => setConfirmDialog({ open: true, action: "reject" })}
-                    disabled={!rejectReason.trim()}
-                  >
-                    Reject Trade
-                  </Button>
+                  {routing.map((route, idx) => {
+                    const user = JSON.parse(localStorage.getItem("user") || "{}");
+                    const canAct = route.status === "PENDING" && user.role === route.approvalRole;
+                    return (
+                      <Box key={idx} sx={{ mb: 2, p: 2, border: '1px solid #eee', borderRadius: 2 }}>
+                        <Typography variant="subtitle2">
+                          {route.approvalRole} (Level {route.approvalLevel})
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Status: <Chip label={route.status} color={route.status === 'PENDING' ? 'warning' : (route.status === 'APPROVED' ? 'success' : 'error')} size="small" />
+                        </Typography>
+                        {canAct && (
+                          <Stack spacing={1} sx={{ mt: 2 }}>
+                            <TextField
+                              label="Comments (optional)"
+                              multiline
+                              rows={2}
+                              fullWidth
+                              value={comments}
+                              onChange={e => setComments(e.target.value)}
+                              placeholder="Add any notes about your decision..."
+                            />
+                            <Button
+                              variant="contained"
+                              color="success"
+                              startIcon={<CheckCircleIcon />}
+                              fullWidth
+                              size="large"
+                              onClick={() => setConfirmDialog({ open: true, action: `approve_${idx}` })}
+                            >
+                              Approve
+                            </Button>
+                            <Divider>OR</Divider>
+                            <TextField
+                              label="Rejection Reason (required)"
+                              multiline
+                              rows={2}
+                              fullWidth
+                              required
+                              value={rejectReason}
+                              onChange={e => setRejectReason(e.target.value)}
+                              placeholder="Why are you rejecting this approval?"
+                              error={!rejectReason}
+                            />
+                            <Button
+                              variant="contained"
+                              color="error"
+                              startIcon={<CancelIcon />}
+                              fullWidth
+                              size="large"
+                              onClick={() => setConfirmDialog({ open: true, action: `reject_${idx}` })}
+                              disabled={!rejectReason.trim()}
+                            >
+                              Reject
+                            </Button>
+                          </Stack>
+                        )}
+                        {route.status !== "PENDING" && (
+                          <Box sx={{ mt: 1 }}>
+                            <Typography variant="caption" color="text.secondary">
+                              Acted By: {route.actedBy || "-"}
+                            </Typography>
+                            {route.comments && (
+                              <Typography variant="caption" color="text.secondary" display="block">
+                                Comments: {route.comments}
+                              </Typography>
+                            )}
+                            {route.rejectionReason && (
+                              <Typography variant="caption" color="error" display="block">
+                                Rejection Reason: {route.rejectionReason}
+                              </Typography>
+                            )}
+                            {route.timestamp && (
+                              <Typography variant="caption" color="text.secondary" display="block">
+                                Time: {new Date(route.timestamp).toLocaleString()}
+                              </Typography>
+                            )}
+                          </Box>
+                        )}
+                      </Box>
+                    );
+                  })}
                 </Stack>
               </Paper>
             )}
 
-            {/* Approval History */}
+            {/* Approval History for All Levels */}
             {!isPending && (
               <Paper sx={{ p: 3 }}>
                 <Typography variant="h6" sx={{ mb: 2 }}>
                   📜 Decision History
                 </Typography>
                 <Stack spacing={2}>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">
-                      Decision
-                    </Typography>
-                    <Typography variant="body1">
-                      <Chip
-                        label={approval.status}
-                        color={approval.status === "APPROVED" ? "success" : "error"}
-                      />
-                    </Typography>
-                  </Box>
-                  {approval.approvedBy && (
-                    <Box>
+                  {routing.map((route, idx) => (
+                    <Box key={idx} sx={{ mb: 2, p: 2, border: '1px solid #eee', borderRadius: 2 }}>
+                      <Typography variant="subtitle2">
+                        {route.approvalRole} (Level {route.approvalLevel})
+                      </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        Approved By
+                        Status: <Chip label={route.status} color={route.status === 'APPROVED' ? 'success' : (route.status === 'REJECTED' ? 'error' : 'warning')} size="small" />
                       </Typography>
-                      <Typography variant="body1">{approval.approvedBy}</Typography>
+                      <Box sx={{ mt: 1 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          Acted By: {route.actedBy || "-"}
+                        </Typography>
+                        {route.comments && (
+                          <Typography variant="caption" color="text.secondary" display="block">
+                            Comments: {route.comments}
+                          </Typography>
+                        )}
+                        {route.rejectionReason && (
+                          <Typography variant="caption" color="error" display="block">
+                            Rejection Reason: {route.rejectionReason}
+                          </Typography>
+                        )}
+                        {route.timestamp && (
+                          <Typography variant="caption" color="text.secondary" display="block">
+                            Time: {new Date(route.timestamp).toLocaleString()}
+                          </Typography>
+                        )}
+                      </Box>
                     </Box>
-                  )}
-                  {approval.rejectedBy && (
-                    <Box>
-                      <Typography variant="caption" color="text.secondary">
-                        Rejected By
-                      </Typography>
-                      <Typography variant="body1">{approval.rejectedBy}</Typography>
-                    </Box>
-                  )}
-                  {approval.approvalTimestamp && (
-                    <Box>
-                      <Typography variant="caption" color="text.secondary">
-                        Decision Time
-                      </Typography>
-                      <Typography variant="body1">
-                        {new Date(approval.approvalTimestamp).toLocaleString()}
-                      </Typography>
-                    </Box>
-                  )}
-                  {approval.comments && (
-                    <Box>
-                      <Typography variant="caption" color="text.secondary">
-                        Comments
-                      </Typography>
-                      <Typography variant="body2">{approval.comments}</Typography>
-                    </Box>
-                  )}
-                  {approval.rejectionReason && (
-                    <Box>
-                      <Typography variant="caption" color="text.secondary">
-                        Rejection Reason
-                      </Typography>
-                      <Typography variant="body2">{approval.rejectionReason}</Typography>
-                    </Box>
-                  )}
+                  ))}
                 </Stack>
               </Paper>
             )}

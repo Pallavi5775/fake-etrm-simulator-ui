@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
+import apiConfig from '../../config/apiConfig';
 import {
   Box, Typography, Paper, Stack, Button, Chip, IconButton,
-  TextField, MenuItem, Alert, Card, CardContent, Grid
+  TextField, MenuItem, Alert, Card, CardContent, Grid,
+  useMediaQuery, useTheme
 } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -12,7 +14,7 @@ import DataTable from "../../components/shared/DataTable";
 import LoadingSpinner from "../../components/shared/LoadingSpinner";
 import Toast from "../../components/shared/Toast";
 
-const BASE_URL = "https://fake-etrm-simulator.onrender.com/api";
+const BASE_URL = apiConfig.baseURL;
 
 const FILTER_OPTIONS = {
   approvalRole: ["TRADER", "RISK_MANAGER", "OPERATIONS", "SENIOR_TRADER"]
@@ -22,6 +24,8 @@ const FILTER_OPTIONS = {
  * Enhanced Risk Approval Dashboard with filtering, summary cards, and quick actions
  */
 export default function ApprovalDashboard() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [approvals, setApprovals] = useState([]);
@@ -409,9 +413,9 @@ export default function ApprovalDashboard() {
   const filteredApprovals = getFilteredApprovals();
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-        <Typography variant="h4">
+    <Box sx={{ p: isMobile ? 1 : 3 }}>
+      <Stack direction={isMobile ? "column" : "row"} justifyContent="space-between" alignItems={isMobile ? "stretch" : "center"} sx={{ mb: 3, gap: 2 }}>
+        <Typography variant={isMobile ? "h5" : "h4"}>
           ✅ Approval Dashboard
         </Typography>
         <Button
@@ -422,6 +426,7 @@ export default function ApprovalDashboard() {
             fetchStatuses();
             fetchPortfolios();
           }}
+          fullWidth={isMobile}
         >
           Refresh
         </Button>

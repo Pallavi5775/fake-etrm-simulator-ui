@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import apiConfig from '../../config/apiConfig';
 import {
   Box, Typography, Paper, Stack, Button, TextField, MenuItem,
   Grid, IconButton, Divider, Alert, Card, CardContent, Chip
@@ -9,7 +10,7 @@ import SaveIcon from "@mui/icons-material/Save";
 import Toast from "../../components/shared/Toast";
 import LoadingSpinner from "../../components/shared/LoadingSpinner";
 
-const BASE_URL = "https://fake-etrm-simulator.onrender.com/api";
+const BASE_URL = apiConfig.baseURL;
 
 const STRATEGY_TYPES = [
   { value: "CALENDAR_SPREAD", label: "Calendar Spread", legs: 2 },

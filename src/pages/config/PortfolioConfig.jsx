@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import apiConfig from '../../config/apiConfig';
 import {
   Box,
   Typography,
@@ -40,7 +41,7 @@ export default function PortfolioConfig() {
   const loadPortfolios = async () => {
     setLoading(true);
     try {
-      const res = await fetch("https://fake-etrm-simulator.onrender.com/api/portfolios");
+      const res = await fetch(apiConfig.baseURL + "/portfolios");
       if (res.ok) {
         const data = await res.json();
         setPortfolios(Array.isArray(data) ? data : []);
@@ -77,7 +78,7 @@ export default function PortfolioConfig() {
       
       if (editingId) {
         // Update existing
-        const res = await fetch(`https://fake-etrm-simulator.onrender.com/api/portfolios/${editingId}`, {
+        const res = await fetch(`${apiConfig.baseURL}/portfolios/${editingId}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -90,7 +91,7 @@ export default function PortfolioConfig() {
         if (!res.ok) throw new Error("Failed to update");
       } else {
         // Create new
-        const res = await fetch("https://fake-etrm-simulator.onrender.com/api/portfolios", {
+        const res = await fetch(apiConfig.baseURL + "/portfolios", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -121,7 +122,7 @@ export default function PortfolioConfig() {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       const token = localStorage.getItem("token");
       
-      const res = await fetch(`https://fake-etrm-simulator.onrender.com/api/portfolios/${id}`, {
+      const res = await fetch(`${apiConfig.baseURL}/portfolios/${id}`, {
         method: "DELETE",
         headers: {
           "X-User-Name": user.username || "",

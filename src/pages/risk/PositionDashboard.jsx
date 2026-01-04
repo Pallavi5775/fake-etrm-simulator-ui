@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import apiConfig from '../../config/apiConfig';
 import { getPortfolios } from "../../api/portfolioApi";
 import {
   Box, Typography, Paper, Stack, Button, Grid, Card, CardContent,
@@ -13,7 +14,7 @@ import LoadingSpinner from "../../components/shared/LoadingSpinner";
 import Toast from "../../components/shared/Toast";
 import DataTable from "../../components/shared/DataTable";
 
-const BASE_URL = "https://fake-etrm-simulator.onrender.com/api";
+const BASE_URL = apiConfig.baseURL;
 
 /**
  * Portfolio Position Dashboard - Real-time position aggregates with drill-down
@@ -105,7 +106,7 @@ export default function PositionDashboard() {
     } catch (err) {
       console.error("Error fetching positions:", err);
       const errorMsg = err.message === "Failed to fetch" 
-        ? "Cannot connect to backend at https://fake-etrm-simulator.onrender.com"
+        ? `Cannot connect to backend at ${apiConfig.baseURL.replace(/\/api$/, "")}`
         : "Network error: " + err.message;
       setError(errorMsg);
       setToast({

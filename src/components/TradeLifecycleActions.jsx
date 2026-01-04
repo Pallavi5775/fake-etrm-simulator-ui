@@ -1,4 +1,5 @@
 import { useState } from "react";
+import apiConfig from '../config/apiConfig';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, TextField, Stack, IconButton, Tooltip,
@@ -10,7 +11,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import HistoryIcon from "@mui/icons-material/History";
 import Toast from "./shared/Toast";
 
-const BASE_URL = "https://fake-etrm-simulator.onrender.com/api";
+const BASE_URL = apiConfig.baseURL;
 
 /**
  * Trade Lifecycle Actions Component

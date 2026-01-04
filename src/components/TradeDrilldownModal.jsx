@@ -7,7 +7,9 @@ import {
   Divider,
   Stack,
   Box,
-  CircularProgress
+  CircularProgress,
+  useMediaQuery,
+  useTheme
 } from "@mui/material";
 
 import ValuationChart from "./ValuationChart";
@@ -18,6 +20,8 @@ import TradeLifecycleActions from "./TradeLifecycleActions";
  * Endur-style trade details + valuation history
  */
 export default function TradeDrilldownModal({ trade, open, onClose, onRefresh }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [showChart, setShowChart] = useState(false);
 
   // Reset chart visibility when trade changes
@@ -30,7 +34,7 @@ export default function TradeDrilldownModal({ trade, open, onClose, onRefresh })
   if (!trade) return null;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth fullScreen={isMobile}>
       <DialogTitle>
         <Stack direction="row" justifyContent="space-between" alignItems="center">
           <Typography variant="h6">
