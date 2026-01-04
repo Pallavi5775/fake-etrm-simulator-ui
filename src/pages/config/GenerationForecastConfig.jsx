@@ -1,9 +1,11 @@
 
 import { useState, useEffect } from "react";
-import { Box, Typography, Paper, Button, Stack, Table, TableHead, TableRow, TableCell, TableBody, Dialog, CircularProgress, Alert } from "@mui/material";
+import { Box, Typography, Paper, Button, Stack, Table, TableHead, TableRow, TableCell, TableBody, Dialog, CircularProgress, Alert, useMediaQuery, useTheme } from "@mui/material";
 import httpClient from "../../api/httpClient";
 
 export default function GenerationForecastConfig() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [forecasts, setForecasts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploadDialog, setUploadDialog] = useState(false);
@@ -65,8 +67,8 @@ export default function GenerationForecastConfig() {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" sx={{ mb: 3 }}>
+    <Box sx={{ p: isMobile ? 1 : 3 }}>
+      <Typography variant={isMobile ? "h5" : "h4"} sx={{ mb: 3 }}>
         Generation Forecasts
       </Typography>
       <Paper sx={{ p: 2, mb: 2 }}>
@@ -82,32 +84,34 @@ export default function GenerationForecastConfig() {
       {loading ? (
         <CircularProgress />
       ) : (
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Plant</TableCell>
-              <TableCell>Date</TableCell>
-              <TableCell>Forecast</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {forecasts.map((f) => (
-              <TableRow key={f.id}>
-                <TableCell>{f.plant}</TableCell>
-                <TableCell>{f.date}</TableCell>
-                <TableCell>{f.forecast}</TableCell>
-                <TableCell>
-                  <Button color="error" onClick={() => handleDelete(f.id)} size="small">Delete</Button>
-                </TableCell>
+        <Box sx={{ overflowX: 'auto' }}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Plant Name</TableCell>
+                <TableCell>Date</TableCell>
+                <TableCell align="right">Forecast (MWh)</TableCell>
+                <TableCell align="right">Actions</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHead>
+            <TableBody>
+              {forecasts.map((f) => (
+                <TableRow key={f.id}>
+                  <TableCell>{f.plantName}</TableCell>
+                  <TableCell>{new Date(f.date).toLocaleDateString()}</TableCell>
+                  <TableCell align="right">{f.forecastMWh?.toLocaleString()}</TableCell>
+                  <TableCell align="right">
+                    <Button color="error" onClick={() => handleDelete(f.id)} size="small">Delete</Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Box>
       )}
 
-      <Dialog open={uploadDialog} onClose={() => setUploadDialog(false)} maxWidth="sm" fullWidth>
-        <Box sx={{ p: 3 }}>
+      <Dialog open={uploadDialog} onClose={() => setUploadDialog(false)} maxWidth="sm" fullWidth fullScreen={isMobile}>
+        <Box sx={{ p: isMobile ? 2 : 3 }}>
           <Typography variant="h6">Upload Generation Forecast CSV</Typography>
           {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
           <input type="file" accept=".csv" onChange={handleFileSelect} style={{ marginTop: 16 }} />

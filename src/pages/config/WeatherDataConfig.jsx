@@ -73,11 +73,11 @@ export default function WeatherDataConfig() {
       </Typography>
       <Paper sx={{ p: 2, mb: 2 }}>
         <Typography variant="body1">
-          Upload and manage renewable energy forecast data (solar, wind, etc.) for forecasting models.
+          Upload and manage weather data (temperature, precipitation) and renewable energy forecast data for forecasting models.
         </Typography>
         <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
           <Button variant="contained" onClick={() => setUploadDialog(true)}>
-            Upload Forecast Data (CSV)
+            Upload Weather/Forecast Data (CSV)
           </Button>
         </Stack>
       </Paper>
@@ -88,18 +88,20 @@ export default function WeatherDataConfig() {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Plant Name</TableCell>
+                <TableCell>Location</TableCell>
                 <TableCell>Date</TableCell>
-                <TableCell align="right">Forecast (MWh)</TableCell>
+                <TableCell align="right">Temperature (°C)</TableCell>
+                <TableCell align="right">Precipitation (mm)</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {weatherSets.map((w) => (
                 <TableRow key={w.id}>
-                  <TableCell>{w.plantName}</TableCell>
+                  <TableCell>{w.location || w.plantName}</TableCell>
                   <TableCell>{new Date(w.date).toLocaleDateString()}</TableCell>
-                  <TableCell align="right">{w.forecastMWh?.toLocaleString()}</TableCell>
+                  <TableCell align="right">{w.temperature != null ? `${w.temperature}°C` : '-'}</TableCell>
+                  <TableCell align="right">{w.precipitation != null ? `${w.precipitation} mm` : '-'}</TableCell>
                   <TableCell align="right">
                     <Button color="error" onClick={() => handleDelete(w.id)} size="small">Delete</Button>
                   </TableCell>
@@ -112,7 +114,7 @@ export default function WeatherDataConfig() {
 
       <Dialog open={uploadDialog} onClose={() => setUploadDialog(false)} maxWidth="sm" fullWidth fullScreen={isMobile}>
         <Box sx={{ p: isMobile ? 2 : 3 }}>
-          <Typography variant="h6">Upload Forecast Data CSV</Typography>
+          <Typography variant="h6">Upload Weather/Forecast Data CSV</Typography>
           {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
           <input type="file" accept=".csv" onChange={handleFileSelect} style={{ marginTop: 16 }} />
           <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
