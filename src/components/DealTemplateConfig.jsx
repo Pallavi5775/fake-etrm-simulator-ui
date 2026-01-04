@@ -62,29 +62,64 @@ export default function DealTemplateList() {
     // Fetch deal template metadata
     httpClient.get('/reference-data/deal-template-metadata').then(res => {
       setMetadata(res.data || {});
+    }).catch(error => {
+      console.error("Failed to fetch deal template metadata:", error);
+      setMetadata({
+        currencies: [],
+        pricingModels: [],
+        units: [],
+        instrumentTypes: []
+      });
     });
   }, []);
 
   const fetchTemplates = async () => {
     try {
-      const res = await fetch(BASE_URL);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
+      const res = await fetch(BASE_URL, {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
       const data = await res.json();
       setTemplates(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error("Failed to load templates:", error);
+      if (error.name === 'AbortError') {
+        console.error("Failed to load templates: Request timed out");
+      } else {
+        console.error("Failed to load templates:", error);
+      }
       setTemplates([]);
     }
   };
 
   const loadInstruments = async () => {
     try {
-      const response = await fetch(INSTRUMENTS_URL);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
+      const response = await fetch(INSTRUMENTS_URL, {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
       if (response.ok) {
         const data = await response.json();
-        setInstruments(Array.isArray(data) ? data : []);
+        // Normalize commodity field
+        const normalizedData = data.map(instrument => ({
+          ...instrument,
+          commodity: instrument.commodityEntity?.name || instrument.commodity_name || instrument.commodity
+        }));
+        setInstruments(Array.isArray(normalizedData) ? normalizedData : []);
       }
     } catch (error) {
-      console.error("Failed to load instruments:", error);
+      if (error.name === 'AbortError') {
+        console.error("Failed to load instruments: Request timed out");
+      } else {
+        console.error("Failed to load instruments:", error);
+      }
       setInstruments([]);
     }
   };
@@ -95,6 +130,9 @@ export default function DealTemplateList() {
       const token = localStorage.getItem("token");
 
       const newValue = !currentValue;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
       const res = await fetch(
         `${BASE_URL}/${templateId}/auto-approval?enabled=${newValue}`,
         {
@@ -103,16 +141,22 @@ export default function DealTemplateList() {
             "X-User-Name": user.username || "",
             "X-User-Role": user.role || "",
             "Authorization": token ? `Bearer ${token}` : ""
-          }
+          },
+          signal: controller.signal
         }
       );
+      clearTimeout(timeoutId);
 
       if (res.ok) {
         const updated = await res.json();
         setTemplates(prev => prev?.map(t => t.id === templateId ? updated : t));
       }
     } catch (error) {
-      console.error("Error toggling auto-approval:", error);
+      if (error.name === 'AbortError') {
+        console.error("Error toggling auto-approval: Request timed out");
+      } else {
+        console.error("Error toggling auto-approval:", error);
+      }
     }
   };
 
@@ -153,10 +197,15 @@ export default function DealTemplateList() {
       const formData = new FormData();
       formData.append("file", selectedFile);
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds for upload
+
       const response = await fetch(`${BASE_URL}/upload-csv`, {
         method: "POST",
-        body: formData
+        body: formData,
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -215,6 +264,9 @@ export default function DealTemplateList() {
         createdByUser: user.username || "UNKNOWN"
       };
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
       const response = await fetch(BASE_URL, {
         method: "POST",
         headers: {
@@ -223,8 +275,10 @@ export default function DealTemplateList() {
           "X-User-Role": user.role || "",
           "Authorization": token ? `Bearer ${token}` : ""
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
 
       if (response.ok) {
         await fetchTemplates();
@@ -234,8 +288,13 @@ export default function DealTemplateList() {
         setError(errorData.message || "Failed to create template");
       }
     } catch (error) {
-      console.error("Error creating template:", error);
-      setError("Error creating template: " + error.message);
+      if (error.name === 'AbortError') {
+        console.error("Error creating template: Request timed out");
+        setError("Request timed out. Please try again.");
+      } else {
+        console.error("Error creating template:", error);
+        setError("Error creating template: " + error.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -354,7 +413,10 @@ export default function DealTemplateList() {
       </Paper>
 
       <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-        Showing all {templates?.length || 0} templates. Toggle to enable/disable auto-approval for each template.
+        {templates?.length > 0 
+          ? `Showing all ${templates.length} templates. Toggle to enable/disable auto-approval for each template.`
+          : "No deal templates found. Create your first template using the 'New Template' button above."
+        }
       </Typography>
 
       {/* Create Template Dialog */}
@@ -450,7 +512,7 @@ export default function DealTemplateList() {
               >
                 {instruments?.map((instrument) => (
                   <MenuItem key={instrument.id} value={instrument.id}>
-                    {instrument.instrumentCode} ({instrument.commodity} - {instrument.instrumentType})
+                    {instrument.commodityEntity?.name || instrument.commodity} - {instrument.instrumentCode}
                   </MenuItem>
                 ))}
               </Select>
@@ -539,9 +601,9 @@ export default function DealTemplateList() {
               CSV Format Required:
             </Typography>
             <Typography variant="caption" component="pre" sx={{ fontFamily: "monospace", display: "block" }}>
-{`templateName,instrumentCode,defaultQuantity,defaultPrice,autoApprovalAllowed,mtmApprovalThreshold
-Power Forward Q1,PWR-Q1-2025,1000,75.50,true,500000
-Gas Option Feb,GAS-FEB25-OPT,500,50.00,false,`}
+{`templateName,instrumentCode,defaultQuantity,defaultPrice,autoApprovalAllowed,mtmApprovalThreshold,commodity,currency,pricingModel,unit,instrumentType
+Power Forward Q1,PWR-Q1-2025,1000,75.50,true,500000,POWER,USD,MARK_TO_MARKET,BBL,FUTURE
+Gas Option Feb,GAS-FEB25-OPT,500,50.00,false,,NATURAL_GAS,EUR,BLACK_SCHOLES,MMBTU,OPTION`}
             </Typography>
           </Alert>
 

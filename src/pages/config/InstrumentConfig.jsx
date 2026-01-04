@@ -132,7 +132,12 @@ export default function InstrumentConfig() {
       const response = await fetch(`${API_BASE}/instruments`);
       if (!response.ok) throw new Error("Failed to load instruments");
       const data = await response.json();
-      setInstruments(data);
+      // Normalize commodity field
+      const normalizedData = data.map(instrument => ({
+        ...instrument,
+        commodity: instrument.commodityEntity?.name || instrument.commodity_name || instrument.commodity
+      }));
+      setInstruments(normalizedData);
     } catch (err) {
       console.error("Failed to load instruments:", err);
       setError(err.message);
