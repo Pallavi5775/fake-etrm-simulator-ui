@@ -414,11 +414,26 @@ export default function TradeDetail() {
                   </Typography>
                 </Box>
               )}
-              {trade.pnlDate && (
+              {trade.tradeDate && (
                 <Box>
-                  <Typography variant="caption" color="text.secondary">PnL Date</Typography>
+                  <Typography variant="caption" color="text.secondary">Trade Date</Typography>
                   <Typography variant="body1">
-                    {new Date(trade.pnlDate).toLocaleDateString()}
+                    {(() => {
+                      try {
+                        const date = new Date(trade.tradeDate);
+                        // Check if date is valid
+                        if (isNaN(date.getTime())) {
+                          return trade.tradeDate; // Return original string if invalid
+                        }
+                        return date.toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        });
+                      } catch (error) {
+                        return trade.tradeDate; // Fallback to original string
+                      }
+                    })()}
                   </Typography>
                 </Box>
               )}
@@ -476,7 +491,24 @@ export default function TradeDetail() {
                 <Box>
                   <Typography variant="caption" color="text.secondary">Created At</Typography>
                   <Typography variant="body1">
-                    {new Date(trade.createdAt).toLocaleString()}
+                    {(() => {
+                      try {
+                        const date = new Date(trade.createdAt);
+                        // Check if date is valid
+                        if (isNaN(date.getTime())) {
+                          return trade.createdAt; // Return original string if invalid
+                        }
+                        return date.toLocaleString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        });
+                      } catch (error) {
+                        return trade.createdAt; // Fallback to original string
+                      }
+                    })()}
                   </Typography>
                 </Box>
               )}
@@ -557,7 +589,21 @@ export default function TradeDetail() {
                       <Grid item xs={12} sm={1.25}>
                         <Typography variant="caption" color="text.secondary">Delivery</Typography>
                         <Typography variant="body2">
-                          {leg.deliveryDate ? new Date(leg.deliveryDate).toLocaleDateString() : "-"}
+                          {leg.deliveryDate ? (() => {
+                            try {
+                              const date = new Date(leg.deliveryDate);
+                              if (isNaN(date.getTime())) {
+                                return leg.deliveryDate;
+                              }
+                              return date.toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              });
+                            } catch (error) {
+                              return leg.deliveryDate;
+                            }
+                          })() : "-"}
                         </Typography>
                       </Grid>
                       {leg.mtm != null && (

@@ -174,7 +174,7 @@ export default function ApprovalDashboard() {
         body: JSON.stringify({
           approvedBy: user.username,
           comments: "Quick approval from dashboard",
-          pnlDate: trade?.pnlDate || new Date().toISOString().split('T')[0]
+          tradeDate: trade?.tradeDate || new Date().toISOString().split('T')[0]
         })
       });
 
@@ -222,7 +222,7 @@ export default function ApprovalDashboard() {
         body: JSON.stringify({
           rejectedBy: user.username,
           reason: reason,
-          pnlDate: trade?.pnlDate || new Date().toISOString().split('T')[0]
+          tradeDate: trade?.tradeDate || new Date().toISOString().split('T')[0]
         })
       });
 
@@ -342,8 +342,8 @@ export default function ApprovalDashboard() {
       }
     },
     {
-      field: "pnlDate",
-      label: "PnL Date",
+      field: "tradeDate",
+      label: "Trade Date",
       sortable: true,
       render: (val) => val ? new Date(val).toLocaleDateString() : "-"
     },

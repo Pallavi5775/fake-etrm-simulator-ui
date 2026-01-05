@@ -379,6 +379,12 @@ export default function DealTemplateList() {
                   <TableCell><strong>Template Name</strong></TableCell>
                   <TableCell><strong>Commodity</strong></TableCell>
                   <TableCell><strong>Instrument</strong></TableCell>
+                  <TableCell><strong>Pricing Model</strong></TableCell>
+                  <TableCell><strong>Default Qty</strong></TableCell>
+                  <TableCell><strong>Default Price</strong></TableCell>
+                  <TableCell><strong>Unit</strong></TableCell>
+                  <TableCell><strong>Currency</strong></TableCell>
+                  <TableCell><strong>MTM Threshold</strong></TableCell>
                   <TableCell align="center"><strong>Auto-Approval</strong></TableCell>
                   <TableCell align="center"><strong>Toggle</strong></TableCell>
                 </TableRow>
@@ -392,6 +398,12 @@ export default function DealTemplateList() {
                       <Chip size="small" label={template.commodity} color="primary" variant="outlined" />
                     </TableCell>
                     <TableCell>{template.instrumentCode}</TableCell>
+                    <TableCell>{template.pricingModel}</TableCell>
+                    <TableCell>{template.defaultQuantity}</TableCell>
+                    <TableCell>{template.defaultPrice}</TableCell>
+                    <TableCell>{template.unit}</TableCell>
+                    <TableCell>{template.currency}</TableCell>
+                    <TableCell>{template.mtmApprovalThreshold}</TableCell>
                     <TableCell align="center">
                       <Chip
                         size="small"

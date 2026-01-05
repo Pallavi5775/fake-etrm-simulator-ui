@@ -16,6 +16,8 @@ import {
   CircularProgress,
   Alert,
   Chip,
+  Switch,
+  FormControlLabel,
   useMediaQuery,
   useTheme,
   Card,
@@ -39,7 +41,8 @@ export default function CounterPartiesConfig() {
     code: "",
     name: "",
     country: "",
-    credit_rating: ""
+    credit_rating: "",
+    active: true
   });
 
   useEffect(() => {
@@ -73,7 +76,7 @@ export default function CounterPartiesConfig() {
       setFormData(counterparty);
     } else {
       setEditingId(null);
-      setFormData({ code: "", name: "", country: "", credit_rating: "" });
+      setFormData({ code: "", name: "", country: "", credit_rating: "", active: true });
     }
     setOpenDialog(true);
   };
@@ -81,7 +84,7 @@ export default function CounterPartiesConfig() {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setEditingId(null);
-    setFormData({ code: "", name: "", country: "", credit_rating: "" });
+    setFormData({ code: "", name: "", country: "", credit_rating: "", active: true });
   };
 
   const handleSave = async () => {
@@ -245,6 +248,18 @@ export default function CounterPartiesConfig() {
                         }}
                       />
                     </Grid>
+                    <Grid item xs={12}>
+                      <Typography variant="caption" color="text.secondary">Status</Typography>
+                      <Chip
+                        label={counterparty.active ? "Active" : "Inactive"}
+                        size="small"
+                        sx={{
+                          backgroundColor: counterparty.active ? "#00C85320" : "#FF525220",
+                          color: counterparty.active ? "#00C853" : "#FF5252",
+                          fontWeight: 700
+                        }}
+                      />
+                    </Grid>
                   </Grid>
                   <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end", gap: 1 }}>
                     <IconButton
@@ -284,6 +299,7 @@ export default function CounterPartiesConfig() {
                 <TableCell sx={{ color: "#B388FF", fontWeight: 600 }}>Name</TableCell>
                 <TableCell sx={{ color: "#B388FF", fontWeight: 600 }}>Country</TableCell>
                 <TableCell sx={{ color: "#B388FF", fontWeight: 600 }}>Credit Rating</TableCell>
+                <TableCell sx={{ color: "#B388FF", fontWeight: 600 }}>Active</TableCell>
                 <TableCell sx={{ color: "#B388FF", fontWeight: 600 }} align="right">
                   Actions
                 </TableCell>
@@ -313,6 +329,17 @@ export default function CounterPartiesConfig() {
                       sx={{
                         backgroundColor: `${getRatingColor(counterparty.credit_rating)}20`,
                         color: getRatingColor(counterparty.credit_rating),
+                        fontWeight: 700
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={counterparty.active ? "Active" : "Inactive"}
+                      size="small"
+                      sx={{
+                        backgroundColor: counterparty.active ? "#00C85320" : "#FF525220",
+                        color: counterparty.active ? "#00C853" : "#FF5252",
                         fontWeight: 700
                       }}
                     />
@@ -415,6 +442,17 @@ export default function CounterPartiesConfig() {
                 "&:hover fieldset": { borderColor: "#7C4DFF" }
               }
             }}
+          />
+          <FormControlLabel
+            control={
+              <Switch
+                checked={formData.active}
+                onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                color="primary"
+              />
+            }
+            label="Active"
+            sx={{ color: "#EDE7F6" }}
           />
         </Stack>
 

@@ -80,7 +80,8 @@ export default function BatchValuation() {
         },
         body: JSON.stringify({
           ...config,
-          portfolioFilter: config.portfolioFilter || ""
+          portfolioFilter: config.portfolioFilter || "",
+          startedBy: user.username || ""
         })
       });
 

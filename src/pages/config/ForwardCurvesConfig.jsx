@@ -35,13 +35,13 @@ export default function ForwardCurvesConfig() {
   const [formData, setFormData] = useState({
     instrumentCode: "",
     deliveryDate: "",
-    price: ""
+    price: "",
+    curveDate: ""
   });
   
   // Bulk upload state
   const [openBulkDialog, setOpenBulkDialog] = useState(false);
-  const [bulkData, setBulkData] = useState("");
-  const [bulkInstrument, setBulkInstrument] = useState("");
+  const [bulkFile, setBulkFile] = useState(null);
 
   const [toast, setToast] = useState({ open: false, message: "", severity: "info" });
   const [error, setError] = useState(null);
@@ -238,35 +238,58 @@ export default function ForwardCurvesConfig() {
   };
 
   const handleBulkUpload = async () => {
-    if (!bulkInstrument || !bulkData.trim()) {
+    if (!bulkFile) {
       setToast({
         open: true,
-        message: "Instrument and data are required",
+        message: "Please select a CSV file",
         severity: "error"
       });
       return;
     }
 
     try {
-      // Parse CSV format: deliveryDate,price
-      const lines = bulkData.trim().split('\n');
+      const text = await bulkFile.text();
+      const lines = text.trim().split('\n');
+      if (lines.length < 2) {
+        setToast({
+          open: true,
+          message: "CSV file must have at least a header and one data row",
+          severity: "error"
+        });
+        return;
+      }
+
+      const headers = lines[0].split(',').map(h => h.trim());
+      const expectedHeaders = ['instrumentCode', 'deliveryDate', 'price', 'curveDate'];
+      if (!expectedHeaders.every(h => headers.includes(h))) {
+        setToast({
+          open: true,
+          message: "CSV must have headers: instrumentCode,deliveryDate,price,curveDate",
+          severity: "error"
+        });
+        return;
+      }
+
       const points = [];
-      
-      for (let line of lines) {
-        const [deliveryDate, price] = line.split(',').map(s => s.trim());
-        if (deliveryDate && price) {
-          points.push({
-            instrumentCode: bulkInstrument,
-            deliveryDate,
-            price: parseFloat(price)
-          });
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim());
+        if (values.length >= 4) {
+          const [instrumentCode, deliveryDate, price, curveDate] = values;
+          if (instrumentCode && deliveryDate && price && curveDate) {
+            points.push({
+              instrumentCode,
+              deliveryDate,
+              price: parseFloat(price),
+              curveDate
+            });
+          }
         }
       }
 
       if (points.length === 0) {
         setToast({
           open: true,
-          message: "No valid data found. Format: deliveryDate,price (one per line)",
+          message: "No valid data rows found in CSV",
           severity: "error"
         });
         return;
@@ -296,9 +319,11 @@ export default function ForwardCurvesConfig() {
           severity: "success"
         });
         setOpenBulkDialog(false);
-        setBulkData("");
-        fetchCurvesByInstrument(bulkInstrument);
+        setBulkFile(null);
         fetchInstruments();
+        if (selectedInstrument) {
+          fetchCurvesByInstrument(selectedInstrument);
+        }
       } else {
         const errorData = await res.json().catch(() => ({}));
         setToast({
@@ -310,7 +335,7 @@ export default function ForwardCurvesConfig() {
     } catch (err) {
       setToast({
         open: true,
-        message: "Upload error: " + err.message,
+        message: "Upload failed: " + err.message,
         severity: "error"
       });
     }
@@ -342,6 +367,12 @@ export default function ForwardCurvesConfig() {
           ${val.toFixed(2)}
         </Typography>
       )
+    },
+    {
+      field: "curveDate",
+      label: "Curve Date",
+      sortable: true,
+      render: (val) => val ? new Date(val).toLocaleDateString() : ""
     },
     {
       field: "lastUpdated",
@@ -606,6 +637,15 @@ export default function ForwardCurvesConfig() {
               inputProps={{ step: "0.01" }}
               required
             />
+            <TextField
+              label="Curve Date"
+              type="date"
+              fullWidth
+              value={formData.curveDate}
+              onChange={(e) => setFormData({ ...formData, curveDate: e.target.value })}
+              InputLabelProps={{ shrink: true }}
+              required
+            />
           </Stack>
         </DialogContent>
         <DialogActions>
@@ -618,29 +658,17 @@ export default function ForwardCurvesConfig() {
 
       {/* Bulk Upload Dialog */}
       <Dialog open={openBulkDialog} onClose={() => setOpenBulkDialog(false)} maxWidth="md" fullWidth fullScreen={isMobile}>
-        <DialogTitle>Bulk Upload Forward Curves</DialogTitle>
+        <DialogTitle>Upload Forward Curves CSV</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1, p: isMobile ? 1 : 0 }}>
-            <TextField
-              label="Instrument Code"
-              fullWidth
-              value={bulkInstrument}
-              onChange={(e) => setBulkInstrument(e.target.value)}
-              required
-            />
-            <TextField
-              label="Curve Data"
-              fullWidth
-              multiline
-              rows={10}
-              value={bulkData}
-              onChange={(e) => setBulkData(e.target.value)}
-              placeholder="Enter data in CSV format (one per line):&#10;2026-01-15,75.50&#10;2026-02-15,76.20&#10;2026-03-15,77.00"
-              helperText="Format: deliveryDate,price (one per line)"
-              required
+            <input
+              type="file"
+              accept=".csv"
+              onChange={(e) => setBulkFile(e.target.files[0])}
+              style={{ marginBottom: 16 }}
             />
             <Alert severity="info">
-              Upload multiple curve points at once. Each line should contain: deliveryDate,price
+              Upload a CSV file with headers: instrumentCode,deliveryDate,price,curveDate
             </Alert>
           </Stack>
         </DialogContent>

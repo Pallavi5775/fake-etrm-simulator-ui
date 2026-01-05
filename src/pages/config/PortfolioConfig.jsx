@@ -15,7 +15,9 @@ import {
   TextField,
   CircularProgress,
   Alert,
-  Chip
+  Chip,
+  Switch,
+  FormControlLabel
 } from "@mui/material";
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material";
 
@@ -28,10 +30,10 @@ export default function PortfolioConfig() {
   const [openDialog, setOpenDialog] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
-    code: "",
     name: "",
-    manager: "",
-    status: "ACTIVE"
+    description: "",
+    risk_owner: "",
+    active: true
   });
 
   useEffect(() => {
@@ -60,7 +62,7 @@ export default function PortfolioConfig() {
       setFormData(portfolio);
     } else {
       setEditingId(null);
-      setFormData({ code: "", name: "", manager: "", status: "ACTIVE" });
+      setFormData({ name: "", description: "", risk_owner: "", active: true });
     }
     setOpenDialog(true);
   };
@@ -68,7 +70,7 @@ export default function PortfolioConfig() {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setEditingId(null);
-    setFormData({ code: "", name: "", manager: "", status: "ACTIVE" });
+    setFormData({ name: "", description: "", risk_owner: "", active: true });
   };
 
   const handleSave = async () => {
@@ -171,7 +173,7 @@ export default function PortfolioConfig() {
             Total Portfolios: {portfolios.length}
           </Typography>
           <Chip
-            label={`Active: ${portfolios.filter(p => p.status === "ACTIVE").length}`}
+            label={`Active: ${portfolios.filter(p => p.active).length}`}
             size="small"
             sx={{
               backgroundColor: "#00C85320",
@@ -214,10 +216,10 @@ export default function PortfolioConfig() {
           <Table size="small">
             <TableHead>
               <TableRow sx={{ backgroundColor: "#1B1F3B" }}>
-                <TableCell sx={{ color: "#B388FF", fontWeight: 600 }}>Code</TableCell>
                 <TableCell sx={{ color: "#B388FF", fontWeight: 600 }}>Name</TableCell>
-                <TableCell sx={{ color: "#B388FF", fontWeight: 600 }}>Manager</TableCell>
-                <TableCell sx={{ color: "#B388FF", fontWeight: 600 }}>Status</TableCell>
+                <TableCell sx={{ color: "#B388FF", fontWeight: 600 }}>Description</TableCell>
+                <TableCell sx={{ color: "#B388FF", fontWeight: 600 }}>Risk Owner</TableCell>
+                <TableCell sx={{ color: "#B388FF", fontWeight: 600 }}>Active</TableCell>
                 <TableCell sx={{ color: "#B388FF", fontWeight: 600 }} align="right">
                   Actions
                 </TableCell>
@@ -236,17 +238,17 @@ export default function PortfolioConfig() {
                   }}
                 >
                   <TableCell sx={{ color: "#EDE7F6", fontWeight: 600 }}>
-                    {portfolio.code}
+                    {portfolio.name}
                   </TableCell>
-                  <TableCell sx={{ color: "#EDE7F6" }}>{portfolio.name}</TableCell>
-                  <TableCell sx={{ color: "#B0BEC5" }}>{portfolio.manager}</TableCell>
+                  <TableCell sx={{ color: "#EDE7F6" }}>{portfolio.description}</TableCell>
+                  <TableCell sx={{ color: "#B0BEC5" }}>{portfolio.risk_owner}</TableCell>
                   <TableCell>
                     <Chip
-                      label={portfolio.status}
+                      label={portfolio.active ? "Active" : "Inactive"}
                       size="small"
                       sx={{
-                        backgroundColor: `${getStatusColor(portfolio.status)}20`,
-                        color: getStatusColor(portfolio.status),
+                        backgroundColor: portfolio.active ? "#00C85320" : "#FF525220",
+                        color: portfolio.active ? "#00C853" : "#FF5252",
                         fontWeight: 700
                       }}
                     />
@@ -294,20 +296,6 @@ export default function PortfolioConfig() {
 
         <Stack spacing={2} sx={{ p: 3 }}>
           <TextField
-            label="Code"
-            value={formData.code}
-            onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-            fullWidth
-            size="small"
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                color: "#EDE7F6",
-                "& fieldset": { borderColor: "#252862" },
-                "&:hover fieldset": { borderColor: "#7C4DFF" }
-              }
-            }}
-          />
-          <TextField
             label="Name"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -322,9 +310,25 @@ export default function PortfolioConfig() {
             }}
           />
           <TextField
-            label="Manager"
-            value={formData.manager}
-            onChange={(e) => setFormData({ ...formData, manager: e.target.value })}
+            label="Description"
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            fullWidth
+            size="small"
+            multiline
+            rows={2}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                color: "#EDE7F6",
+                "& fieldset": { borderColor: "#252862" },
+                "&:hover fieldset": { borderColor: "#7C4DFF" }
+              }
+            }}
+          />
+          <TextField
+            label="Risk Owner"
+            value={formData.risk_owner}
+            onChange={(e) => setFormData({ ...formData, risk_owner: e.target.value })}
             fullWidth
             size="small"
             sx={{
@@ -335,27 +339,17 @@ export default function PortfolioConfig() {
               }
             }}
           />
-          <TextField
-            label="Status"
-            value={formData.status}
-            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-            select
-            fullWidth
-            size="small"
-            SelectProps={{
-              native: true,
-            }}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                color: "#EDE7F6",
-                "& fieldset": { borderColor: "#252862" },
-                "&:hover fieldset": { borderColor: "#7C4DFF" }
-              }
-            }}
-          >
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="INACTIVE">INACTIVE</option>
-          </TextField>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={formData.active}
+                onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                color="primary"
+              />
+            }
+            label="Active"
+            sx={{ color: "#EDE7F6" }}
+          />
         </Stack>
 
         <Stack direction="row" spacing={2} sx={{ p: 3, borderTop: "1px solid #252862" }}>
